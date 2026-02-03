@@ -1,0 +1,10 @@
+## Convert Web of Science (bibtex) to CSV
+
+library(bibliometrix)
+wos_file <- "C:/path/to/your/wos_file.bib" # update path name
+W <- convert2df(wos_file,
+                dbsource = "wos",
+                format = "bibtex")
+write.csv(W,
+          "C:/path/to/your/wos_converted.csv", # update path name
+          row.names = FALSE)
