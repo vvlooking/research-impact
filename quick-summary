@@ -1,0 +1,82 @@
+## Stacked Line Graph (Total Citations of Articles Published Each Year)
+
+# Load libraries
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(readxl)
+library(readr)
+
+# Import spreadsheet (Excel)
+df <- read_excel("/Users/valerievera/Desktop/usc-combined-final.xlsx")
+
+# Summarize by year
+year_summary <- df %>%
+  mutate(
+    PY = suppressWarnings(as.integer(PY)),
+    TC_num = readr::parse_number(as.character(TC))
+  ) %>%
+  filter(!is.na(PY), PY >= 2019, PY <= 2025) %>% # adjust publication years
+  group_by(PY) %>%
+  summarise(
+    Publications     = n(),
+    Total_Citations  = sum(TC_num, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  arrange(PY)
+
+print(year_summary)
+
+# Format for faceting
+plot_data <- year_summary %>%
+  pivot_longer(
+    cols = c(Publications, Total_Citations),
+    names_to = "metric",
+    values_to = "value"
+  ) %>%
+  mutate(
+    metric = factor(
+      metric,
+      levels = c("Publications", "Total_Citations"),
+      labels = c("Publications", "Total Citations")
+    )
+  )
+
+# Stacked line plot
+p <- ggplot(plot_data, aes(x = PY, y = value, color = metric)) +
+  geom_line(linewidth = 1.25) +
+  geom_point(size = 3) +
+  facet_wrap(~ metric, ncol = 1, scales = "free_y") +
+  scale_color_manual(
+    values = c(
+      "Publications"    = "#73000a",
+      "Total Citations" = "#1F414D"
+    )
+  ) +
+  scale_x_continuous(
+    breaks = 2019:2025, # adjust publication years
+    limits = c(2019, 2025) # adjust publication years
+  ) +
+  labs(
+    x = "Year",
+    y = NULL,
+    color = NULL
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    legend.position = "none",              
+    strip.text = element_text(face = "bold"),
+    panel.grid.minor = element_blank(),
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  )
+
+print(p)
+
+# Save graph
+ggsave(
+  filename = "publications_citations_stacked_line_2019_2025.png", # adjust file name
+  plot     = p,
+  width    = 7,
+  height   = 7,
+  dpi      = 300
+)
