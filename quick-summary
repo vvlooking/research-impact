@@ -8,7 +8,7 @@ library(readxl)
 library(readr)
 
 # Import spreadsheet (Excel)
-df <- read_excel("/Users/valerievera/Desktop/usc-combined-final.xlsx")
+df <- read_excel("/Users/valerievera/Desktop/usc-combined-final.xlsx") # adjust file path
 
 # Summarize by year
 year_summary <- df %>%
