@@ -1,0 +1,175 @@
+## Figure (Average Productivity per Active Year)
+
+# Load libraries
+library(readr)
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+
+# Import spreadsheet (Excel)
+df <- read_excel("/Users/valerievera/Desktop/usc-combined-final.xlsx") # update file path
+
+yearly_counts <- df %>%
+  filter(PY >= 2019, PY <= 2025) %>% # adjust years
+  mutate(PY = as.integer(PY)) %>%
+  count(PY, name = "Publications") %>%
+  complete(PY = 2019:2025, fill = list(Publications = 0)) %>% # adjust years
+  arrange(PY)
+
+# Average publications per ACTIVE year (exclude years with 0 pubs)
+avg_pubs_active_year <- yearly_counts %>%
+  filter(Publications > 0) %>%
+  summarise(avg = mean(Publications)) %>%
+  pull(avg)
+
+avg_pubs_active_year
+
+# Create figure
+p <- ggplot(yearly_counts, aes(x = PY, y = Publications)) +
+  geom_col(fill = "#73000a") +
+  geom_hline(yintercept = avg_pubs_active_year, linetype = "dashed", linewidth = 1) +
+  scale_x_continuous(breaks = seq(2019, 2025, by = 1)) + # adjust years
+  labs(
+    x = "Publication Year",
+    y = "Number of Publications",
+    ) +
+  theme_minimal(base_size = 14)
+
+p
+
+ggsave(
+  filename = "publications_2019_2025_active_year_avg.png", # adjust file name
+  plot     = p,
+  width    = 7,
+  height   = 4,
+  dpi      = 300
+)
+
+
+
+
+
+## Average publications per year
+
+# Load libraries
+library(readxl)
+library(dplyr)
+
+# Import spreadsheet (Excel)
+df <- read_excel("/Users/valerievera/Desktop/usc-combined-final.xlsx") # update file path
+
+pubs_per_year <- df %>%
+  mutate(PY = as.integer(PY)) %>%
+  count(PY, name = "Publications")
+
+pubs_per_year
+
+avg_publications_per_year <- mean(pubs_per_year$Publications)
+
+avg_publications_per_year
+
+
+
+
+
+## Authorship
+
+# Solo-authored publications
+
+# Load libraries
+library(readxl)
+library(dplyr)
+library(stringr)
+
+# Import spreadsheet (Excel)
+df <- read_excel("/Users/valerievera/Desktop/usc-combined-final.xlsx") # update file path
+
+solo_authored <- df %>%
+  filter(!is.na(AU_key) & AU_key != "") %>%
+  mutate(
+    n_authors = str_count(AU_key, ";") + 1
+  ) %>%
+  filter(n_authors == 1)
+
+# Number of solo-authored articles
+n_solo <- nrow(solo_authored)
+
+n_solo
+
+total_articles <- df %>%
+  filter(!is.na(AU_key) & AU_key != "") %>%
+  nrow()
+
+pct_solo <- n_solo / total_articles * 100
+
+pct_solo
+
+solo_authored %>%
+  select(AU_key, PY) %>%
+  head(10)
+
+# First author
+
+faculty_string <- "Doe J; Smith J" # Adjust names
+
+faculty <- str_split(faculty_string, ";\\s*")[[1]] %>%
+  str_squish()
+
+first_author_counts <- df %>%
+  filter(!is.na(AU_key) & AU_key != "") %>%
+  mutate(
+    first_author = str_trim(str_extract(AU_key, "^[^;]+"))
+  ) %>%
+  filter(first_author %in% faculty) %>%
+  count(first_author, sort = TRUE)
+
+first_author_counts
+
+total_articles <- df %>%
+  filter(!is.na(AU_key) & AU_key != "") %>%
+  nrow()
+
+faculty_first_author_articles <- df %>%
+  filter(!is.na(AU_key) & AU_key != "") %>%
+  mutate(
+    first_author = str_trim(str_extract(AU_key, "^[^;]+"))
+  ) %>%
+  filter(first_author %in% faculty) %>%
+  nrow()
+
+pct_faculty_first_author <- faculty_first_author_articles / total_articles * 100
+
+pct_faculty_first_author
+
+# Last Author
+
+faculty_string <- "Doe J; Smith J" # Adjust names
+
+faculty <- str_split(faculty_string, ";\\s*")[[1]] %>%
+  str_squish()
+
+last_author_counts <- df %>%
+  filter(!is.na(AU_key) & AU_key != "") %>%
+  mutate(
+    last_author = str_trim(str_extract(AU_key, "[^;]+$"))
+  ) %>%
+  filter(last_author %in% faculty) %>%
+  count(last_author, sort = TRUE)
+
+last_author_counts
+
+total_articles <- df %>%
+  filter(!is.na(AU_key) & AU_key != "") %>%
+  nrow()
+
+faculty_last_author_articles <- df %>%
+  filter(!is.na(AU_key) & AU_key != "") %>%
+  mutate(
+    last_author = str_trim(str_extract(AU_key, "[^;]+$"))
+  ) %>%
+  filter(last_author %in% faculty) %>%
+  nrow()
+
+pct_faculty_last_author <- faculty_last_author_articles / total_articles * 100
+
+pct_faculty_last_author
