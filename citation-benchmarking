@@ -1,0 +1,136 @@
+## Total Citations 
+
+# Load libraries
+library(readr)
+library(dplyr)
+library(readxl)
+
+# Read  data
+df <- read_excel("file_name") # Update file path
+
+df <- df %>%
+  rename(TC = `TC...35`)
+  
+summary(df$TC)
+
+nrow(df)
+
+tc_overview <- df %>%
+  summarise(
+    publications_total = n(),
+    citations_total = sum(TC, na.rm = TRUE),
+    citations_min = min(TC, na.rm = TRUE),
+    citations_median = median(TC, na.rm = TRUE),
+    citations_mean = mean(TC, na.rm = TRUE),
+    citations_max = max(TC, na.rm = TRUE),
+    publications_with_citations = sum(TC > 0, na.rm = TRUE),
+    pct_with_citations = round(mean(TC > 0, na.rm = TRUE) * 100, 1)
+  )
+
+tc_overview
+
+tc_distribution <- df %>%
+  mutate(
+    bucket = case_when(
+      TC == 0 ~ "0",
+      TC <= 5 ~ "1–5",
+      TC <= 10 ~ "6–10",
+      TC <= 25 ~ "11–25",
+      TRUE ~ "26+"
+    )
+  ) %>%
+  count(bucket) %>%
+  mutate(percent = round(n / sum(n) * 100, 1))
+
+tc_distribution
+
+## RCR and FCR
+
+# Load libraries
+library(dplyr)
+library(readxl)
+
+# Read your data
+df <- read_excel("file_name") # Update file path
+
+df <- df %>%
+  rename(
+    TC  = `TC...35`
+    # RCR = `RCR`   # uncomment/adjust if RCR header is weird
+    # FCR = `FCR`   # uncomment/adjust if FCR header is weird
+  )
+
+# Helper: overview stats for a metric column
+metric_overview <- function(data, col, positive_threshold = 0) {
+  x <- dplyr::pull(data, {{ col }})
+
+  data %>%
+    summarise(
+      publications_total = n(),
+      metric_total   = sum({{ col }}, na.rm = TRUE),
+      metric_min     = min({{ col }}, na.rm = TRUE),
+      metric_median  = median({{ col }}, na.rm = TRUE),
+      metric_mean    = mean({{ col }}, na.rm = TRUE),
+      metric_max     = max({{ col }}, na.rm = TRUE),
+      publications_with_value = sum({{ col }} > positive_threshold, na.rm = TRUE),
+      pct_with_value = round(mean({{ col }} > positive_threshold, na.rm = TRUE) * 100, 1)
+    )
+}
+
+# Helper: distribution buckets (TC-style) OR continuous buckets (RCR/FCR-style)
+metric_distribution <- function(data, col, type = c("tc", "ratio")) {
+  type <- match.arg(type)
+
+  if (type == "tc") {
+    data %>%
+      mutate(
+        bucket = case_when(
+          is.na({{ col }}) ~ "Missing",
+          {{ col }} == 0 ~ "0",
+          {{ col }} <= 5 ~ "1–5",
+          {{ col }} <= 10 ~ "6–10",
+          {{ col }} <= 25 ~ "11–25",
+          TRUE ~ "26+"
+        )
+      ) %>%
+      count(bucket) %>%
+      mutate(percent = round(n / sum(n) * 100, 1))
+  } else {
+    
+    data %>%
+      mutate(
+        bucket = case_when(
+          is.na({{ col }}) ~ "Missing",
+          {{ col }} == 0 ~ "0",
+          {{ col }} < 1 ~ "<1.0",
+          {{ col }} < 2 ~ "1.0–<2.0",
+          {{ col }} < 5 ~ "2.0–<5.0",
+          {{ col }} < 10 ~ "5.0–<10.0",
+          TRUE ~ "10+"
+        )
+      ) %>%
+      count(bucket) %>%
+      mutate(percent = round(n / sum(n) * 100, 1))
+  }
+}
+
+# TC
+tc_overview <- metric_overview(df, TC, positive_threshold = 0)
+tc_distribution <- metric_distribution(df, TC, type = "tc")
+
+tc_overview
+tc_distribution
+
+# RCR
+rcr_overview <- metric_overview(df, RCR, positive_threshold = 0)
+rcr_distribution <- metric_distribution(df, RCR, type = "ratio")
+
+rcr_overview
+rcr_distribution
+
+# FCR
+fcr_overview <- metric_overview(df, FCR, positive_threshold = 0)
+fcr_distribution <- metric_distribution(df, FCR, type = "ratio")
+
+fcr_overview
+fcr_distribution
