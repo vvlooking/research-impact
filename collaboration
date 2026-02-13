@@ -1,0 +1,96 @@
+## Number of Unique Co-Authors
+
+# Load libraries
+library(dplyr)
+library(stringr)
+library(readxl)
+
+# Read data
+df <- read_excel("file_name") # Add file path
+
+# Clean and filter author names
+authors_long <- df %>%
+  select(AU_key) %>%
+  filter(!is.na(AU_key) & AU_key != "") %>%
+  separate_rows(AU_key, sep = "\\s*;\\s*") %>%
+  mutate(
+    AU_key = str_trim(AU_key),
+    AU_key = str_replace_all(AU_key, "\\s+", " ")
+  ) %>%
+  filter(
+    AU_key != "",
+    AU_key != "Doe J" # Add researcher's name
+  )
+
+# Count unique co-author names
+unique_authors <- authors_long %>%
+  distinct(AU_key)
+
+n_unique_authors <- nrow(unique_authors)
+
+cat("Number of unique co-author names (excluding Doe J):", # Add researcher's name
+    n_unique_authors, "\n")
+
+# View the unique names
+unique_authors %>%
+  arrange(AU_key) %>%
+  View()
+
+# Frequency of each co-author
+author_counts <- authors_long %>%
+  count(AU_key, sort = TRUE)
+
+author_counts
+
+
+
+
+## Average number of co-authors per document
+
+# Load libraries
+library(dplyr)
+library(tidyr)
+library(stringr)
+library(readxl)
+
+# Read data
+df <- read_excel("file_name") # Add file path
+
+# Add a document ID
+df <- df %>%
+  mutate(doc_id = row_number())
+
+# Split authors into long format
+authors_long <- df %>%
+  select(doc_id, AU_key) %>%
+  filter(!is.na(AU_key) & AU_key != "") %>%
+  separate_rows(AU_key, sep = "\\s*;\\s*") %>%
+  mutate(
+    AU_key = str_trim(AU_key),
+    AU_key = str_replace_all(AU_key, "\\s+", " ")
+  ) %>%
+  filter(AU_key != "")
+
+# Count authors per document
+coauthor_counts <- authors_long %>%
+  group_by(doc_id) %>%
+  summarise(
+    total_authors = n_distinct(AU_key),
+    focal_author_present = any(AU_key == "Olatosi B"),
+    coauthors = ifelse(focal_author_present,
+                       total_authors - 1,
+                       total_authors),
+    .groups = "drop"
+  )
+
+# Calculate summary statistics
+summary_stats <- coauthor_counts %>%
+  summarise(
+    documents = n(),
+    mean_coauthors = round(mean(coauthors), 2),
+    median_coauthors = median(coauthors),
+    min_coauthors = min(coauthors),
+    max_coauthors = max(coauthors)
+  )
+
+summary_stats
