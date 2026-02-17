@@ -1,0 +1,96 @@
+## Fields of Research
+
+# Output:
+# 1) Table of FoR counts + percentages
+# 2) Stacked bar chart (% of outputs by FoR)
+
+# Load libraries
+library(readxl)
+library(dplyr)
+library(stringr)
+library(tidyr)
+library(ggplot2)
+library(scales)
+
+# Load data
+df <- read_excel("file_name") # Update file path
+
+# FoR column name
+
+for_col <- "Fields of Research (ANZSRC 2020)"
+
+if (!for_col %in% names(df)) {
+  stop("FoR column not found. Run: names(df) to confirm the exact column name.")
+}
+
+# 3) Create article_id (prefer DOI in DI; fallback to row id)
+df <- df %>%
+  mutate(
+    DI = if ("DI" %in% names(.)) as.character(DI) else NA_character_,
+    article_id = case_when(
+      !is.na(DI) & str_squish(DI) != "" ~ paste0("doi:", str_squish(DI)),
+      TRUE ~ paste0("row:", row_number())
+    )
+  )
+
+# 4) Extract FoR terms into long format (one FoR per row)
+#    NOTE: don't use column name `for` (reserved in R); use `for_term`
+
+for_long <- df %>%
+  select(article_id, for_raw = all_of(for_col)) %>%
+  filter(!is.na(for_raw) & str_squish(for_raw) != "") %>%
+  mutate(for_term = str_split(as.character(for_raw), ";\\s*")) %>%
+  unnest(for_term) %>%
+  mutate(
+    for_term = str_squish(for_term),
+    for_term = str_replace_all(for_term, "\\s+", " ")
+  ) %>%
+  filter(for_term != "") %>%
+  distinct(article_id, for_term)
+
+cat("Articles with FoR:", n_distinct(for_long$article_id), "\n")
+cat("Unique FoR terms:", n_distinct(for_long$for_term), "\n")
+
+# 5) Count FoR assignments (full counting)
+for_counts <- for_long %>%
+  count(for_term, name = "n_articles") %>%
+  arrange(desc(n_articles))
+
+# 6) Convert to percentages
+for_percent <- for_counts %>%
+  mutate(percent = n_articles / sum(n_articles))
+
+# Preview top 20
+print(for_percent, n = 20)
+
+# Optional: export the full FoR table for QA
+write.csv(for_percent, "file_name.csv", row.names = FALSE) # Update file path
+
+# Collapse small categories into "Other" for readability
+
+threshold <- 0.03  # 3% cutoff; adjust to 0.02 or 0.05 if preferred
+
+for_plot <- for_percent %>%
+  mutate(for_grouped = ifelse(percent < threshold, "Other", for_term)) %>%
+  group_by(for_grouped) %>%
+  summarise(percent = sum(percent), .groups = "drop") %>%
+  arrange(desc(percent))
+
+# Stacked bar chart (% of outputs by FoR)
+p <- ggplot(for_plot, aes(x = "Institute", y = percent, fill = for_grouped)) +
+  geom_col(width = 0.6) +
+  scale_y_continuous(labels = percent_format(accuracy = 1)) +
+  labs(
+    x = NULL,
+    y = "Percentage of Publications",
+    fill = "Field of Research"
+  ) +
+  theme_minimal(base_size = 13) +
+  theme(
+    axis.text.x = element_blank(),
+    axis.ticks.x = element_blank(),
+    panel.grid.minor = element_blank(),
+    legend.position = "right"
+  )
+
+print(p)
