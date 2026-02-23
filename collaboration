@@ -9,6 +9,13 @@ library(tidyr)
 # Read data
 df <- read_excel("file_name") # Add file path
 
+# Faculty to exclude (update names)
+faculty_exclude <- c(
+  "Doe J",
+  "Smith J",
+  "Jones R"
+)
+
 # Clean and filter author names
 authors_long <- df %>%
   select(AU_key) %>%
@@ -20,7 +27,7 @@ authors_long <- df %>%
   ) %>%
   filter(
     AU_key != "",
-    AU_key != "Doe J" # Add researcher's name
+    !(AU_key %in% faculty_exclude)   # <-- exclude all faculty names
   )
 
 # Count unique co-author names
@@ -29,7 +36,7 @@ unique_authors <- authors_long %>%
 
 n_unique_authors <- nrow(unique_authors)
 
-cat("Number of unique co-author names (excluding Doe J):", # Add researcher's name
+cat("Number of unique co-author names (excluding faculty list):",
     n_unique_authors, "\n")
 
 # View the unique names
