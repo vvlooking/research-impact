@@ -4,7 +4,7 @@
 library(dplyr)
 library(stringr)
 library(readxl)
-library(tidy)
+library(tidyr)
 
 # Read data
 df <- read_excel("file_name") # Add file path
