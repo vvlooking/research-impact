@@ -53,7 +53,7 @@ author_counts
 
 
 
-## Average number of co-authors per document
+## Average number of co-authors per document (Individual Reports)
 
 # Load libraries
 library(dplyr)
@@ -92,6 +92,69 @@ coauthor_counts <- authors_long %>%
   )
 
 # Calculate summary statistics
+summary_stats <- coauthor_counts %>%
+  summarise(
+    documents = n(),
+    mean_coauthors = round(mean(coauthors), 2),
+    median_coauthors = median(coauthors),
+    min_coauthors = min(coauthors),
+    max_coauthors = max(coauthors)
+  )
+
+summary_stats
+
+
+## Average number of co-authors per document (Group Reports)
+
+# Load libraries
+library(dplyr)
+library(tidyr)
+library(stringr)
+library(readxl)
+
+# Read data
+df <- read_excel("file_name")  # Add file path
+
+# ---- Faculty to exclude ----
+faculty_exclude <- c(
+  "Doe J",
+  "Smith M",
+  "Dear, J"
+)
+
+# Add document ID
+df <- df %>%
+  mutate(doc_id = row_number())
+
+# Split authors into long format
+authors_long <- df %>%
+  select(doc_id, AU_key) %>%
+  filter(!is.na(AU_key) & AU_key != "") %>%
+  separate_rows(AU_key, sep = "\\s*;\\s*") %>%
+  mutate(
+    AU_key = str_trim(AU_key),
+    AU_key = str_replace_all(AU_key, "\\s+", " ")
+  ) %>%
+  filter(
+    AU_key != "",
+    !(AU_key %in% faculty_exclude)   # <-- REMOVE FACULTY HERE
+  )
+
+# Count remaining authors per document
+coauthor_counts <- authors_long %>%
+  group_by(doc_id) %>%
+  summarise(
+    coauthors = n_distinct(AU_key),
+    .groups = "drop"
+  )
+
+# Ensure documents with ONLY faculty don't disappear
+coauthor_counts <- df %>%
+  select(doc_id) %>%
+  left_join(coauthor_counts, by = "doc_id") %>%
+  mutate(coauthors = ifelse(is.na(coauthors), 0, coauthors))
+
+# Summary statistics
 summary_stats <- coauthor_counts %>%
   summarise(
     documents = n(),
