@@ -24,33 +24,3 @@ top10_journals_counts <- df %>%
 
 top10_journals_counts
 print(top10_journals_counts, n = Inf)
-
-
-
-
-
-## Identify Top Citing Journals from Cited References
-
-library(dplyr)
-library(readr)
-library(stringr)
-
-# Read citing articles CSV
-df_citing <- read_csv("file_name") # Add file path
-
-# Clean journal names
-df_citing <- df_citing %>%
-  mutate(
-    `Source title` = str_trim(`Source title`),
-    `Source title` = str_replace_all(`Source title`, "\\s+", " ")
-  )
-
-# Count top citing journals
-top_citing_journals <- df_citing %>%
-  filter(!is.na(`Source title`) & `Source title` != "") %>%
-  count(`Source title`, sort = TRUE) %>%
-  mutate(
-    percent = round(n / sum(n) * 100, 1)
-  )
-
-top_citing_journals
