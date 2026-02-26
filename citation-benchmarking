@@ -44,26 +44,29 @@ tc_distribution <- df %>%
 
 tc_distribution
 
+
+
+
+
 ## RCR and FCR
 
 # Load libraries
 library(dplyr)
 library(readxl)
 
-# Read your data
-df <- read_excel("file_name") # Update file path
+# Read file
+df <- read_excel("file_name") # Update file name
 
+# Make sure metrics are numeric
 df <- df %>%
-  rename(
-    TC  = `TC...35`
-    # RCR = `RCR`   # uncomment/adjust if RCR header is weird
-    # FCR = `FCR`   # uncomment/adjust if FCR header is weird
+  mutate(
+    TC  = as.numeric(TC),
+    RCR = as.numeric(RCR),
+    FCR = as.numeric(FCR)
   )
 
-# Helper: overview stats for a metric column
+# Overview function
 metric_overview <- function(data, col, positive_threshold = 0) {
-  x <- dplyr::pull(data, {{ col }})
-
   data %>%
     summarise(
       publications_total = n(),
@@ -77,7 +80,7 @@ metric_overview <- function(data, col, positive_threshold = 0) {
     )
 }
 
-# Helper: distribution buckets (TC-style) OR continuous buckets (RCR/FCR-style)
+# Distribution function
 metric_distribution <- function(data, col, type = c("tc", "ratio")) {
   type <- match.arg(type)
 
@@ -96,7 +99,6 @@ metric_distribution <- function(data, col, type = c("tc", "ratio")) {
       count(bucket) %>%
       mutate(percent = round(n / sum(n) * 100, 1))
   } else {
-    
     data %>%
       mutate(
         bucket = case_when(
@@ -115,22 +117,21 @@ metric_distribution <- function(data, col, type = c("tc", "ratio")) {
 }
 
 # TC
-tc_overview <- metric_overview(df, TC, positive_threshold = 0)
+tc_overview <- metric_overview(df, TC)
 tc_distribution <- metric_distribution(df, TC, type = "tc")
 
-tc_overview
-tc_distribution
-
 # RCR
-rcr_overview <- metric_overview(df, RCR, positive_threshold = 0)
+rcr_overview <- metric_overview(df, RCR)
 rcr_distribution <- metric_distribution(df, RCR, type = "ratio")
 
-rcr_overview
-rcr_distribution
-
 # FCR
-fcr_overview <- metric_overview(df, FCR, positive_threshold = 0)
+fcr_overview <- metric_overview(df, FCR)
 fcr_distribution <- metric_distribution(df, FCR, type = "ratio")
 
+tc_overview
+rcr_overview
 fcr_overview
+
+tc_distribution
+rcr_distribution
 fcr_distribution
