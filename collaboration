@@ -165,3 +165,48 @@ summary_stats <- coauthor_counts %>%
   )
 
 summary_stats
+
+
+
+
+
+## Number of Unique Affiliations (excluding home department)
+
+# Load libraries
+library(dplyr)
+library(tidyr)
+library(stringr)
+
+# Read data
+df <- read_excel("file_name")  # Add file path
+
+unique_affiliations <- df %>%
+  select(column_name) %>% # Add column name of cleaned affiliations
+  filter(!is.na(column_name) & column_name != "") %>% # Add column name of cleaned affiliations
+  
+  # split into rows
+  separate_rows(column_name, sep = "\\s*;\\s*") %>% # Add column name of cleaned affiliations
+  
+  # clean text
+  mutate(
+    column_name = str_trim(column_name), # Add column name of cleaned affiliations
+    column_name = str_replace_all(column_name, "\\s+", " ") # Add column name of cleaned affiliations
+  ) %>%
+  
+  # remove blanks
+  filter(column_name != "") %>% # Add column name of cleaned affiliations
+  
+  # EXCLUDE ASPH
+  filter(column_name != "department_name") %>% # Add column name of cleaned affiliations and department name
+  
+  # get unique affiliations
+  distinct(column_name) # Add column name of cleaned affiliations
+
+# Count
+n_unique_affiliations <- nrow(unique_affiliations)
+
+n_unique_affiliations
+
+# View affiliations
+unique_affiliations %>%
+  arrange(column_name) # Add column name of cleaned affiliations
