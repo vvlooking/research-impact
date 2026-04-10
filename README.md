@@ -16,3 +16,5 @@
 - DOI = DI
 - Affiliations / Author Affiliations = affiliations
 - Add column DB with database name (Scopus / Dimensions)
+
+3. Clean data in OpenRefine
