@@ -17,4 +17,4 @@
 - Affiliations / Author Affiliations = affiliations
 - Add column DB with database name (Scopus / Dimensions)
 
-3. Clean data in OpenRefine
+3. [Clean data in OpenRefine](https://github.com/vvlooking/research-impact/blob/cca98146341568773f508002236f1a7dbf8b6fb7/open-refine)
