@@ -15,3 +15,4 @@
 - Year / Publication Year = PY
 - DOI = DI
 - Affiliations / Author Affiliations = affiliations
+- Add column DB with database name (Scopus / Dimensions)
