@@ -1,6 +1,82 @@
 ## Step 1: Trim and normalize text
 
-For columns TI, SO, AU, AF, and affiliations.
+For columns TI, SO, AU, and affiliations:
 
 Edit cells → Transform
-value.trim().replace(/\s+/," ")
+  value.trim().replace(/\s+/," ")
+
+# Step 2: Clean and normalize DOI
+
+For column DI:
+
+Edit cells → Transform
+value.toLowercase()
+  .trim()
+  .replace(/^https?:\/\/(dx\.)?doi\.org\//,"")
+  value.replace(/[<>,"'\s]+$/,"")
+
+# Step 3: Normalize titles and sources for matching
+
+Add a column based on TI column (TI_key) and a column based on SO column (SO_key)
+
+Edit cells → Transform
+value.toLowercase()
+  .trim()
+  .replace(/[^a-z0-9 ]/,"")    
+  .replace(/\s+/," ")          
+
+# Step 4: Normalize citations
+
+For column TC:
+
+Edit cells → Transform
+value.toString().replace(",","").toNumber()
+
+# Step 5: Normalize author names
+
+Add a column based on AU column (AU_key). For column: AU_key:
+
+Edit cells → Transform
+join(
+  forEach(
+    split(value, ";"),
+    v,
+    if(
+      trim(v).contains(","),
+      toTitlecase(trim(v).replace(/\./, "").replace(/^(.*?),\s*([A-Za-z]).*$/, "$1 $2")),
+      if(
+        isNonBlank(match(trim(v), /^([A-Z][A-Z'\- ]+)\s+([A-Z])[A-Z.]*$/)),
+        toTitlecase(trim(v).replace(/\./, "").replace(/^([A-Z][A-Z'\- ]+)\s+([A-Z])[A-Z.]*$/, "$1 $2")),
+        if(
+          isNonBlank(match(trim(v), /^(.+?)\s+([A-Za-z]).*$/)),
+          toTitlecase(trim(v).replace(/\./, "").replace(/^(.+?)\s+([A-Za-z]).*$/, "$1 $2")),
+          toTitlecase(trim(v).replace(/\./, ""))
+        )
+      )
+    )
+  ),
+  "; "
+)
+
+# Step 6: Separate and clean author affiliations
+
+Add column based on affiliations column (affiliations_key)
+
+value
+  .replace(/[^;(]*\(/, "(")
+  .replace("(", "")
+  .replace(")", "")
+  .toLowercase()
+  .replace(/\s*;\s*/, "; ")
+  .replace(/\s+/, " ")
+  .trim()
+
+# Step 7: Cluster and edit near-duplicates
+
+For columns AU, SO_key, AF, and affiliations_key:
+
+Column menu ▸ Edit cells ▸ Cluster and edit…
+- Run Key collision methods (e.g., fingerprint, n-gram fingerprint) and Nearest neighbor (e.g., Levenshtein distance)
+- Merge obvious variants (e.g., “J Med Libr Assoc” ↔ “Journal of the Medical Library Association”)
+
+# Step 8: Export CSV
