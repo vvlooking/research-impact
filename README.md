@@ -18,5 +18,8 @@
 - Add column DB with database name (Scopus / Dimensions)
 
 3. [Clean data in OpenRefine](https://github.com/vvlooking/research-impact/blob/cca98146341568773f508002236f1a7dbf8b6fb7/open-refine)
-4. De-duplicate data in Excel (retain articles from the database with the most comprehensive indexing)
+   
+4. De-duplicate data in Excel, retaining articles from the database with the most comprehensive indexing)
+- De-duplicate by DOI, then by title
+  
 5. Manually review and edit author names
