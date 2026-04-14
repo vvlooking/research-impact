@@ -73,10 +73,11 @@ value
 
 # Step 7: Cluster and edit near-duplicates
 
-For columns AU, SO_key, AF, and affiliations_key:
+For columns AU_key, SO_key, and affiliations_key:
 
 Column menu ▸ Edit cells ▸ Cluster and edit…
 - Run Key collision methods (e.g., fingerprint, n-gram fingerprint) and Nearest neighbor (e.g., Levenshtein distance)
 - Merge obvious variants (e.g., “J Med Libr Assoc” ↔ “Journal of the Medical Library Association”)
 
 # Step 8: Export CSV
+- Use naming convention: last name/department-combined (e.g., smith-combined; marketing-combined)
