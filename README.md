@@ -25,3 +25,4 @@
 5. Manually review and edit data in the following columns:
 - AU_key: Ensure author names are formatted as Last Name First Initial (e.g., Smith M; Doe J)
 - Publication Type (e.g., Article; Review; Book; Book Chapter; Preprint; Conference Proceedings; Abstract; Editorial Materials; Patents; Guidelines)
+- Countries (e.g., usa; canada; england)
