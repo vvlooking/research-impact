@@ -7,7 +7,7 @@ library(tidyr)
 library(ggplot2)
 
 # Import spreadsheet (Excel)
-df <- read_excel("/Users/valerievera/Desktop/usc-combined-final.xlsx") # update file path
+df <- read_excel("file_name") # update file path
 
 yearly_counts <- df %>%
   filter(PY >= 2019, PY <= 2025) %>% # adjust years
@@ -38,7 +38,7 @@ p <- ggplot(yearly_counts, aes(x = PY, y = Publications)) +
 p
 
 ggsave(
-  filename = "publications_2019_2025_active_year_avg.png", # adjust file name
+  filename = "file_name", # adjust file name
   plot     = p,
   width    = 7,
   height   = 4,
@@ -56,7 +56,7 @@ library(readxl)
 library(dplyr)
 
 # Import spreadsheet (Excel)
-df <- read_excel("/Users/valerievera/Desktop/usc-combined-final.xlsx") # update file path
+df <- read_excel("file_name") # update file path
 
 pubs_per_year <- df %>%
   mutate(PY = as.integer(PY)) %>%
@@ -82,7 +82,7 @@ library(dplyr)
 library(stringr)
 
 # Import spreadsheet (Excel)
-df <- read_excel("/Users/valerievera/Desktop/usc-combined-final.xlsx") # update file path
+df <- read_excel("file_name") # update file path
 
 solo_authored <- df %>%
   filter(!is.na(AU_key) & AU_key != "") %>%
