@@ -28,4 +28,8 @@
 - Countries (e.g., usa; canada; england)
 
 ## Step 3: Analyze Publication Data
-# Quick Summary
+# [Quick Summary](https://github.com/vvlooking/research-impact/blob/10dbc12bfb38b74a98a3c3292516f00c67f76cf1/quick-summary)
+- Create figure: "Total Citations of Documents Published Each Year"
+- Calculate sum of times cited
+- Calculate the average number of citations per document
+- List the top three most cited documents
