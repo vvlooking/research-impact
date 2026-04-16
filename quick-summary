@@ -8,7 +8,7 @@ library(readxl)
 library(readr)
 
 # Import spreadsheet (Excel)
-df <- read_excel("/Users/valerievera/Desktop/usc-combined-final.xlsx") # adjust file path
+df <- read_excel("file_name") # adjust file path
 
 # Summarize by year
 year_summary <- df %>%
@@ -74,7 +74,7 @@ print(p)
 
 # Save graph
 ggsave(
-  filename = "publications_citations_stacked_line_2019_2025.png", # adjust file name
+  filename = "file_name", # adjust file name
   plot     = p,
   width    = 7,
   height   = 7,
