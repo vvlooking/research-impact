@@ -48,3 +48,13 @@
 - Create figure: "Percentage of Documents Published in Journals by JIF Quartile"
 - Create figure: "Articles by Journal Citation Reports (JCR) Category"
 - Calculate JCR categories (Excel pivot table)
+
+### [Collaboration](https://github.com/vvlooking/research-impact/blob/abe4b402b604d631308f259bbf86e931527ef135/collaboration)
+- Calculate number of unique co-authors
+- Calculate average number of co-authors per document
+- Create figure: Collaboration Network (Authors)
+- Calculate number of unique co-author affiliations (outside of USC)
+- Identify top institutional affiliations of co-authors
+- Create figure: "Collaboration Network (Institutions)"
+- Calculate number of unique co-author affiliations (within USC)
+- Create figure: "Collaboration Network (USC)"
