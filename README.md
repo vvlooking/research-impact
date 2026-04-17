@@ -40,3 +40,11 @@
 - Create figure: "Average Productivity per Active Year"
 - Calculate the number and percentage of document types
 - Calculate the number of documents by authorship order (i.e., sole, first, and last author)
+
+### [Dissemination](https://github.com/vvlooking/research-impact/blob/ee1e42d18d7eefe63f6d5d9a5b64e37054d0f8f3/dissemination)
+- List journal impact factors
+- Mark journals in the top 10% of their category by JIF percentile
+- Calculate the number and percentage of journal quartiles (Excel pivot table)
+- Create figure: "Percentage of Documents Published in Journals by JIF Quartile"
+- Create figure: "Articles by Journal Citation Reports (JCR) Category"
+- Calculate JCR categories (Excel pivot table)
