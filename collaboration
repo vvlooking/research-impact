@@ -196,7 +196,7 @@ unique_affiliations <- df %>%
   # remove blanks
   filter(column_name != "") %>% # Add column name of cleaned affiliations
   
-  # EXCLUDE ASPH
+  # exclude department
   filter(column_name != "department_name") %>% # Add column name of cleaned affiliations and department name
   
   # get unique affiliations
