@@ -84,7 +84,7 @@ coauthor_counts <- authors_long %>%
   group_by(doc_id) %>%
   summarise(
     total_authors = n_distinct(AU_key),
-    focal_author_present = any(AU_key == "Olatosi B"),
+    focal_author_present = any(AU_key == "Last Name F"), # Add author name here
     coauthors = ifelse(focal_author_present,
                        total_authors - 1,
                        total_authors),
