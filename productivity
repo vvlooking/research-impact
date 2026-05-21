@@ -115,31 +115,19 @@ faculty_string <- "Doe J; Smith J" # Adjust names
 faculty <- str_split(faculty_string, ";\\s*")[[1]] %>%
   str_squish()
 
-first_author_counts <- df %>%
+coauthored_df <- df %>%
   filter(!is.na(AU_key) & AU_key != "") %>%
   mutate(
+    author_count = str_count(AU_key, ";") + 1,
     first_author = str_trim(str_extract(AU_key, "^[^;]+"))
   ) %>%
+  filter(author_count > 1)
+
+first_author_counts <- coauthored_df %>%
   filter(first_author %in% faculty) %>%
   count(first_author, sort = TRUE)
 
 first_author_counts
-
-total_articles <- df %>%
-  filter(!is.na(AU_key) & AU_key != "") %>%
-  nrow()
-
-faculty_first_author_articles <- df %>%
-  filter(!is.na(AU_key) & AU_key != "") %>%
-  mutate(
-    first_author = str_trim(str_extract(AU_key, "^[^;]+"))
-  ) %>%
-  filter(first_author %in% faculty) %>%
-  nrow()
-
-pct_faculty_first_author <- faculty_first_author_articles / total_articles * 100
-
-pct_faculty_first_author
 
 # Last Author
 
@@ -148,28 +136,16 @@ faculty_string <- "Doe J; Smith J" # Adjust names
 faculty <- str_split(faculty_string, ";\\s*")[[1]] %>%
   str_squish()
 
-last_author_counts <- df %>%
+coauthored_df <- df %>%
   filter(!is.na(AU_key) & AU_key != "") %>%
   mutate(
+    author_count = str_count(AU_key, ";") + 1,
     last_author = str_trim(str_extract(AU_key, "[^;]+$"))
   ) %>%
+  filter(author_count > 1)
+
+last_author_counts <- coauthored_df %>%
   filter(last_author %in% faculty) %>%
   count(last_author, sort = TRUE)
 
 last_author_counts
-
-total_articles <- df %>%
-  filter(!is.na(AU_key) & AU_key != "") %>%
-  nrow()
-
-faculty_last_author_articles <- df %>%
-  filter(!is.na(AU_key) & AU_key != "") %>%
-  mutate(
-    last_author = str_trim(str_extract(AU_key, "[^;]+$"))
-  ) %>%
-  filter(last_author %in% faculty) %>%
-  nrow()
-
-pct_faculty_last_author <- faculty_last_author_articles / total_articles * 100
-
-pct_faculty_last_author
