@@ -1,0 +1,256 @@
+# Step 1: Create a project folder
+# institution-crosswalk
+  # data/
+    # institutions.csv
+    # institutions_aliases.csv
+  # input/
+    # OpenRefine dataset.xlsx
+  # output/
+  # review/
+  # scripts/
+    01_create_affiliation_inventory.R
+    02_standardize_affiliations.R
+
+# Step 2: Create script, 01_create_affiliation_inventory.R. This script will extract distinct affiliation_key values and produce "review/affiliation_inventory.csv" 
+
+install.packages(c(
+  "readxl",
+  "dplyr",
+  "tidyr",
+  "stringr",
+  "readr",
+  "writexl"
+))
+
+library(readxl)
+library(dplyr)
+library(tidyr)
+library(stringr)
+library(readr)
+
+input_file <- "input/combined-publications.xlsx" # update file path to OpenRefine dataset
+
+publications <- read_excel(input_file) |>
+  mutate(
+    publication_row_id = row_number(),
+    source = recode(
+      DB,
+      "ISI" = "Web of Science",
+      .default = DB
+    )
+  )
+
+affiliations_long <- publications |>
+  select(
+    publication_row_id,
+    source,
+    affiliations,
+    affiliations_key
+  ) |>
+  separate_longer_delim(
+    affiliations_key,
+    delim = ";"
+  ) |>
+  mutate(
+    # affiliations_key is already cleaned in OpenRefine.
+    # Only remove extra spaces here.
+    observed_key = str_squish(affiliations_key)
+  ) |>
+  filter(
+    !is.na(observed_key),
+    observed_key != ""
+  )
+
+affiliation_inventory <- affiliations_long |>
+  group_by(source, observed_key) |>
+  summarise(
+    occurrences = n(),
+    example_record = first(publication_row_id),
+    example_affiliations = first(affiliations),
+    .groups = "drop"
+  ) |>
+  arrange(source, desc(occurrences), observed_key) |>
+  mutate(
+    institution_id = NA_character_,
+    review_status = "pending",
+    notes = NA_character_
+  )
+
+write_csv(
+  affiliation_inventory,
+  "review/affiliation_inventory.csv", # update file path
+  na = ""
+)
+
+# Step 3: Create the institution table
+  # Create data/institutions.csv in Excel
+
+# Step 4: Review the affiliation inventory
+  # Open review/affiliation_inventory.csv in Excel
+  # For every distinct observed_key, identify the actual institution, make sure the institution has a row in institutions.csv, enter its institution_id, change review_status to approved
+  # When finished, save a copy as data/institution/aliases.csv
+
+# Step 5: Apply the crosswalk
+  # Create the script, scripts/02_standardize_affiliations.R
+
+# Load libraries
+library(readxl)
+library(dplyr)
+library(tidyr)
+library(stringr)
+library(readr)
+library(writexl)
+
+collapse_unique <- function(x) {
+  values <- x |>
+    na.omit() |>
+    unique() |>
+    sort()
+
+  if (length(values) == 0) {
+    NA_character_
+  } else {
+    str_c(values, collapse = "; ")
+  }
+}
+
+# Import publication data
+publications <- read_excel(
+  "input/combined-publications.xlsx" # update file path to OpenRefine data
+) |>
+  mutate(
+    publication_row_id = row_number(),
+    source = recode(
+      DB,
+      "ISI" = "Web of Science",
+      .default = DB
+    )
+  )
+
+# Convert the publication-level affiliation column to long form
+affiliations_long <- publications |>
+  select(
+    publication_row_id,
+    source,
+    affiliations,
+    affiliations_key
+  ) |>
+  separate_longer_delim(
+    affiliations_key,
+    delim = ";"
+  ) |>
+  mutate(
+    observed_key = str_squish(affiliations_key)
+  ) |>
+  filter(
+    !is.na(observed_key),
+    observed_key != ""
+  )
+
+# Import crosswalk tables
+institutions <- read_csv(
+  "data/institutions.csv", # update file path to crosswalk
+  col_types = cols(.default = col_character())
+)
+
+aliases <- read_csv(
+  "data/institution_aliases.csv",
+  col_types = cols(.default = col_character())
+) |>
+  filter(review_status == "approved")
+
+# Match source plus affiliation key
+matched_affiliations <- affiliations_long |>
+  left_join(
+    aliases |>
+      select(source, observed_key, institution_id),
+    by = c("source", "observed_key")
+  ) |>
+  left_join(
+    institutions,
+    by = "institution_id"
+  )
+
+# Create an updated unmatched-review file
+unmatched <- matched_affiliations |>
+  filter(is.na(institution_id)) |>
+  count(source, observed_key, sort = TRUE)
+
+write_csv(
+  unmatched,
+  "review/unmatched_affiliations.csv", # update file path
+  na = ""
+)
+
+# Prevent repeated authors from causing repeated institution matches
+publication_institutions <- matched_affiliations |>
+  filter(!is.na(institution_id)) |>
+  distinct(
+    publication_row_id,
+    institution_id,
+    .keep_all = TRUE
+  )
+
+# Produce publication-level standardized columns
+standardized_summary <- matched_affiliations |>
+  group_by(publication_row_id) |>
+  summarise(
+    match_status = case_when(
+      all(!is.na(institution_id)) ~ "complete",
+      any(!is.na(institution_id)) ~ "partial",
+      TRUE ~ "unmatched"
+    ),
+    unmatched_affiliation_count = sum(is.na(institution_id)),
+    .groups = "drop"
+  ) |>
+  left_join(
+    publication_institutions |>
+      group_by(publication_row_id) |>
+      summarise(
+        canonical_affiliations =
+          collapse_unique(canonical_name),
+        institution_ids =
+          collapse_unique(institution_id),
+        ipeds_unitids =
+          collapse_unique(ipeds_unitid),
+        ror_ids =
+          collapse_unique(ror_id),
+        institution_count =
+          n_distinct(institution_id),
+        .groups = "drop"
+      ),
+    by = "publication_row_id"
+  )
+
+# Add results without overwriting original affiliation columns
+standardized_publications <- publications |>
+  left_join(
+    standardized_summary,
+    by = "publication_row_id"
+  )
+
+write_xlsx(
+  standardized_publications,
+  "output/combined-publications-standardized.xlsx" # update file path
+)
+
+# Step 6: Review the results in the scrpit, 02_standardize_affiliations.R, and then examine review/unmatched_affiliations.csv
+
+standardized_publications |>
+  count(match_status)
+
+# Check examples
+standardized_publications |>
+  filter(match_status != "complete") |>
+  select(
+    DB,
+    DI,
+    TI,
+    affiliations,
+    affiliations_key,
+    canonical_affiliations,
+    match_status
+  ) |>
+  View()
+
+# For each new institution, add it to institutions.csv and add the observed name to institution_aliases.csv, mark the alias as approved, and run the script again
