@@ -212,6 +212,6 @@ If an unmatched institution maps to an institution already in the "institutions.
 
 For example:
 
-| institution_id | observed_key | source | review_status|
-| --- | | --- | | --- | | --- | | --- |
-| INST000001 | | university of south carolina columbia | | Scopus | | approved |
+| institution_id | observed_key | source | review_status |
+|---|---|---|---|
+| INST000001 | University of South Carolina Columbia | Scopus | Approved |
