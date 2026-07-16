@@ -27,7 +27,7 @@ Upload the cleaned de-duplicated Excel file into the input/ subfolder. The Excel
 
 ### Create and Update "Standarize Affiliations" Script
 
-In RStudio, create the script, "02_standardize_affiliations.R".
+In RStudio, create the script, "02_standardize_affiliations.R". Then, update the following lines with the correct file paths: "path_to_deduplicated_dataset", "path_to_dated_institutions.csv", "path_to_dated_institution_aliases.csv", "path_to_unmatched_affiliations.csv", and "path_to_deduplicated_dataset-standardized.xlsx".
 
 ```r
 # Load libraries
@@ -175,8 +175,17 @@ write_xlsx(
   standardized_publications,
   "path_to_deduplicated_dataset-standardized.xlsx" # Update path to standardized output file in output/ subfolder (add -standardized.xlsx to the original file name)
 )
+```
 
+### Run the Standardization Script
 
+Run the standardization script to split the affiliations_key into individual affiliation strings, match those strings against "institution_aliases.csv", retrieve canonical names and identifiers from "institutions.csv", produce a standardized Excel file, and produce a new "unmatched_affiliations.csv" file.
+
+### Review the Matching Rate
+
+Add the following code to the end of the standardization script.
+
+```r
 # Review the results
 
 standardized_publications |>
@@ -195,3 +204,4 @@ standardized_publications |>
     match_status
   ) |>
   View()
+```
