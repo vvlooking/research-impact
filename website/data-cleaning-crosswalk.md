@@ -216,8 +216,21 @@ For example:
 |---|---|---|---|
 | INST000001 | University of South Carolina Columbia | Scopus | Approved |
 
-If an unmatched institution does not map to an institution already in the "institutions.csv" file, add a row to the "institutinos.aliases.csv" file.
+If an unmatched institution does not map to an institution already in the "institutions.csv" file, add a row to the "institutions.csv" file.
 
 | institution_id | canonical_name | entity_type | parent_id | state_code | country_code | ipeds_unitid |
 |---|---|---|---|---|---|---|
 | INST000001 | university of south carolina | university | INST000001 | sc | usa | 218663 |
+
+After adding necessary rows to the "institutions.csv" file, check for duplicates based on affiliation IDs, such as IPEDS.
+
+### Re-run the Standardization Script
+
+Re-run the standardization script and check the match status by adding the following code to the end of the script:
+
+```r
+standardized_publications |>
+  count(match_status)
+```
+
+Repeat the review and re-run process until the remaining unmatched affiliations are resolved.
