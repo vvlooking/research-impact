@@ -3,4 +3,10 @@ root: intro
 
 chapters:
   - file: data-collection
+  
+  - file: data-cleaning
+  sections:
+    - file: data-cleaning-openrefine
+    - files: data-cleaning-crosswalk
+    - files: data-cleaning-review
   - file: resources
