@@ -208,7 +208,7 @@ standardized_publications |>
 
 ## Classify Every Unmatched Affiliation
 
-If an unmatched institution maps to an institution already in the `institutions.csv` file, add a row to the `institutions.aliases.csv` file. 
+Review the 'unmatched_affiliations.csv` file. If an unmatched institution maps to an institution already in the `institutions.csv` file, add a row to the `institutions.aliases.csv` file. 
 
 For example:
 
