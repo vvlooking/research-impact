@@ -215,3 +215,9 @@ For example:
 | institution_id | observed_key | source | review_status |
 |---|---|---|---|
 | INST000001 | University of South Carolina Columbia | Scopus | Approved |
+
+If an unmatched institution does not map to an institution already in the "institutions.csv" file, add a row to the "institutinos.aliases.csv" file.
+
+| institution_id | canonical_name | entity_type | parent_id | state_code | country_code | ipeds_unitid |
+|---|---|---|---|---|---|---|
+| INST000001 | university of south carolina | INST000001 | sc | usa | 218663 |
