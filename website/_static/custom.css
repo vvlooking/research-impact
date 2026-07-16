@@ -1,0 +1,7 @@
+.task-list-item {
+  list-style-type: none;
+}
+
+.task-list-item input {
+  margin-left: 0;
+}
