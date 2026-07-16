@@ -1,0 +1,11 @@
+title: My Project Website
+author: Your Name
+copyright: "2026"
+
+repository:
+  url: https://github.com/vvlooking/research-impact
+  branch: main
+
+html:
+  use_repository_button: true
+  use_issues_button: true
