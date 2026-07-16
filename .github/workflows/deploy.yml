@@ -35,7 +35,8 @@ jobs:
 
       - name: Build website
         run: |
-          jupyter-book build website
+          jupyter-book clean website
+          jupyter-book build website --all
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
