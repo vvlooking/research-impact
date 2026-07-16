@@ -15,19 +15,19 @@
 
 ## Create a Folder Structure
 
-Create a parent folder, "institution-crosswalk," and include the following sub-folders  it: data, input, output, review, scripts.
+Create a parent folder, `institution-crosswalk` and include the following sub-folders  it: data, input, output, review, scripts.
 
 ## Create a Dated Copy of the Crosswalk Files
 
-Make copies of the crosswalk files with today's date and add them to the data/ subfolder (e.g., institutions-07.16.26.csv, institutions_aliases-07.16.26.csv)
+Make copies of the crosswalk files with today's date and add them to the `data/` subfolder (e.g., `institutions-07.16.26.csv`, `institutions_aliases-07.16.26.csv`)
 
 ## Add the Cleaned Excel file to the input/ Subfolder
 
-Upload the cleaned de-duplicated Excel file into the input/ subfolder. The Excel file should include at least the following columns: DB, affiliations, affiliations_key.
+Upload the cleaned de-duplicated Excel file into the `input/` subfolder. The Excel file should include at least the following columns: `DB`, `affiliations`, `affiliations_key`.
 
 ## Create and Update "Standarize Affiliations" Script
 
-In RStudio, create the script, "02_standardize_affiliations.R". Then, update the following lines with the correct file paths: "path_to_deduplicated_dataset", "path_to_dated_institutions.csv", "path_to_dated_institution_aliases.csv", "path_to_unmatched_affiliations.csv", and "path_to_deduplicated_dataset-standardized.xlsx".
+In RStudio, create the script `02_standardize_affiliations.R`. Then, update the following lines with the correct file paths: `path_to_deduplicated_dataset`, `path_to_dated_institutions.csv`, `path_to_dated_institution_aliases.csv`, `path_to_unmatched_affiliations.csv`, and `path_to_deduplicated_dataset-standardized.xlsx`.
 
 ```r
 # Load libraries
@@ -179,7 +179,7 @@ write_xlsx(
 
 ## Run the Standardization Script
 
-Run the standardization script to split the affiliations_key into individual affiliation strings, match those strings against "institution_aliases.csv", retrieve canonical names and identifiers from "institutions.csv", produce a standardized Excel file, and produce a new "unmatched_affiliations.csv" file.
+Run the standardization script to split the affiliations_key into individual affiliation strings, match those strings against `institution_aliases.csv`, retrieve canonical names and identifiers from `institutions.csv`, produce a standardized Excel file, and produce a new `unmatched_affiliations.csv` file.
 
 ## Review the Matching Rate
 
@@ -208,7 +208,7 @@ standardized_publications |>
 
 ## Classify Every Unmatched Affiliation
 
-If an unmatched institution maps to an institution already in the "institutions.csv" file, add a row to the "institutions.aliases.csv" file. 
+If an unmatched institution maps to an institution already in the `institutions.csv` file, add a row to the `institutions.aliases.csv` file. 
 
 For example:
 
