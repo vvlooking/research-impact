@@ -226,4 +226,4 @@ After adding necessary rows to the `institutions.csv` file, check for duplicates
 
 ## Re-run the Standardization Script
 
-Re-run the standardization script and check the match status. Repeat the review and re-run process until the remaining unmatched affiliations are resolved.
+Re-run the standardization script and check the match status. Repeat the review and re-run process until the remaining unmatched affiliations are resolved. Note that some affiliations may need to be edited in the cleaned Excel file manually.
