@@ -179,7 +179,7 @@ write_xlsx(
 
 ## Run the Standardization Script
 
-Run the standardization script to split the affiliations_key into individual affiliation strings, match those strings against `institution_aliases.csv`, retrieve canonical names and identifiers from `institutions.csv`, produce a standardized Excel file, and produce a new `unmatched_affiliations.csv` file.
+Run the standardization script to split the `affiliations_key` into individual affiliation strings, match those strings against `institution_aliases.csv`, retrieve canonical names and identifiers from `institutions.csv`, produce a standardized Excel file, and produce a new `unmatched_affiliations.csv` file.
 
 ## Review the Matching Rate
 
