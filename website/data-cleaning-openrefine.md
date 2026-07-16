@@ -1,1 +1,1 @@
-# Add directions on cleaning data in OpenRefine
+# Clean Data in OpenRefine
