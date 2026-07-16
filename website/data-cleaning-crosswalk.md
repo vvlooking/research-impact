@@ -2,16 +2,16 @@
 
 ## Checklist
 
-- [ ] Create a folder structure for the crosswalk
-- [ ] Create a dated copy of the crosswalk files, "institutions.csv" and "institution_aliases.csv", and add them to the data/ folder
-- [ ] Add the cleaned Excel file in input/ folder
-- [ ] Add the script, "02_standardize_affiliations.R", to the scripts/ subfolder and update the file path for "input_file" and "output_file"
-- [ ] Run the standardization script
-- [ ] Check the match-status summary
-- [ ] Open "unmatched_affiliations.csv"
-- [ ] Map new variants to existing instiutions in the dated "institution_aliases.csv" file
-- [ ] Add new institutions, when necessary, to the dated "institutions.csv" file
-- [ ] Re-run the script, "02_standardize_affiliations.R"
+ [ ] Create a folder structure for the crosswalk
+ [ ] Create a dated copy of the crosswalk files, "institutions.csv" and "institution_aliases.csv", and add them to the data/ folder
+ [ ] Add the cleaned Excel file in input/ folder
+ [ ] Add the script, "02_standardize_affiliations.R", to the scripts/ subfolder and update the file path for "input_file" and "output_file"
+ [ ] Run the standardization script
+ [ ] Check the match-status summary
+ [ ] Open "unmatched_affiliations.csv"
+ [ ] Map new variants to existing instiutions in the dated "institution_aliases.csv" file
+ [ ] Add new institutions, when necessary, to the dated "institutions.csv" file
+ [ ] Re-run the script, "02_standardize_affiliations.R"
 
 ### Create a Folder Structure
 
