@@ -1,1 +1,2 @@
-# Add directions on how to create intiial crosswalk for USC departments
+# Fall 2026 Internship Projects
+## USC Crosswalk
