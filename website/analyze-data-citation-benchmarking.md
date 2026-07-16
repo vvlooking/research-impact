@@ -1,1 +1,1 @@
-# Citation benchmarking directions
+# Citation Benchmarking
