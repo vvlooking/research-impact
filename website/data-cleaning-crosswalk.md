@@ -220,4 +220,4 @@ If an unmatched institution does not map to an institution already in the "insti
 
 | institution_id | canonical_name | entity_type | parent_id | state_code | country_code | ipeds_unitid |
 |---|---|---|---|---|---|---|
-| INST000001 | university of south carolina | INST000001 | sc | usa | 218663 |
+| INST000001 | university of south carolina | university | INST000001 | sc | usa | 218663 |
