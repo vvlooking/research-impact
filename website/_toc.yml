@@ -3,19 +3,19 @@ root: intro
 
 chapters:
   - file: data-collection
-  
-  - file: data-cleaning
-  sections:
-    - file: data-cleaning-openrefine
-    - file: data-cleaning-crosswalk
-    - file: data-cleaning-review
-    
-  - file: analyze-data
-  sections:
-    - file: analyze-data-quick-summary
-    - file: analyze-data-productivity
-    - file: analyze-data-dissemination
-    - file: analyze-data-collaboration
-    - file: analyze-data-citation-benchmarking
 
-    - file: intern-projects
+  - file: data-cleaning
+    sections:
+      - file: data-cleaning-openrefine
+      - file: data-cleaning-crosswalk
+      - file: data-cleaning-review
+
+  - file: analyze-data
+    sections:
+      - file: analyze-data-quick-summary
+      - file: analyze-data-productivity
+      - file: analyze-data-dissemination
+      - file: analyze-data-collaboration
+      - file: analyze-data-citation-benchmarking
+
+  - file: intern-projects
