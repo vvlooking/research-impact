@@ -1,1 +1,1 @@
-# manually review and add publication type
+# Manually Review and Update Cleaned Data
