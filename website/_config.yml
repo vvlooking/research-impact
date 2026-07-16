@@ -1,5 +1,5 @@
-title: My Project Website
-author: Your Name
+title: Research Impact Reporting
+author: Digital Research Services
 copyright: "2026"
 
 repository:
@@ -9,3 +9,5 @@ repository:
 html:
   use_repository_button: true
   use_issues_button: true
+  extra_css:
+    - _static/custom.css
