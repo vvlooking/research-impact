@@ -183,7 +183,7 @@ Run the standardization script to split the affiliations_key into individual aff
 
 ### Review the Matching Rate
 
-Add the following code to the end of the standardization script.
+Add the following code to the end of the standardization script:
 
 ```r
 # Review the results
@@ -205,3 +205,13 @@ standardized_publications |>
   ) |>
   View()
 ```
+
+### Classify Every Unmatched Affiliation
+
+If an unmatched institution maps to an institution already in the "institutions.csv" file, add a row to the "institutions.aliases.csv" file. 
+
+For example:
+
+| institution_id | observed_key | source | review_status|
+| --- | | --- | | --- | | --- | | --- |
+| INST000001 | | university of south carolina columbia | | Scopus | | approved |
