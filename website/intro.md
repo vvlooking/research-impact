@@ -6,7 +6,7 @@ This site contains information, resources, and documentation for this project.
 
 ## About This Project
 
-Add a description of your project here.
+Add a description of your project here. Add a full checklist here
 
 ## Explore the Site
 
