@@ -188,7 +188,7 @@ message("Results written to: ", output_file)
 
 ## Collaborating States
 
-Calculate the number of unique states across publications by adding the following script.
+Calculate the number of unique states across publications by adding the following script:
 
 ```r
 # Validate the state column
@@ -260,6 +260,7 @@ state_counts <- publication_states |>
   )
 ```
 
+
 Identify the top collaborating states and export the results by adding the following script:
 
 ```r  
@@ -297,6 +298,121 @@ write_xlsx(
     `State Summary` = state_summary_table,
     `Top 15 States` = top_15_states,
     `All State Counts` = state_counts
+  ),
+  output_file
+)
+
+message("Results written to: ", output_file)
+```
+
+## Top Collaborating Countries
+
+Calculate the number of unique countries across publications by adding the following script:
+
+```r
+# Validate the country column
+if (!"country_code" %in% names(institutions)) {
+  stop(
+    "institutions.csv does not contain a column named ",
+    "'country_code'."
+  )
+}
+
+# Create one row per publication and country
+
+publication_countries <- publication_institution_details |>
+  filter(
+    !is.na(country_code),
+    country_code != ""
+  ) |>
+  distinct(
+    publication_row_id,
+    country_code
+  )
+  
+# Count unique countries
+number_unique_countries <- publication_countries |>
+  summarise(
+    unique_countries = n_distinct(country_code)
+  ) |>
+  pull(unique_countries)
+
+message(
+  "Number of unique countries: ",
+  number_unique_countries
+)
+
+# Count publications per country
+country_counts <- publication_countries |>
+  count(
+    country_code,
+    name = "unique_publications",
+    sort = TRUE
+  ) |>
+  mutate(
+    rank = row_number()
+  ) |>
+  select(
+    rank,
+    country_code,
+    unique_publications
+  )
+```
+
+Identify the top collaborating countries and export the results by adding the following script:
+
+```r
+# Select top 15 countries
+top_15_countries <- country_counts |>
+  slice_head(n = 15)
+
+print(top_15_countries)
+
+# Summary
+country_summary_table <- tibble(
+  measure = c(
+    "Publications in input file",
+    "Publications with at least one identified country",
+    "Unique countries",
+    "Publication-country combinations"
+  ),
+  value = c(
+    nrow(publications),
+    n_distinct(publication_countries$publication_row_id),
+    number_unique_countries,
+    nrow(publication_countries)
+  )
+)
+
+# Update Excel file
+
+write_xlsx(
+  list(
+    Summary = summary_table,
+
+    `Top 15 Institutions` =
+      top_15_institutions,
+
+    `All Institution Counts` =
+      institution_counts,
+
+    `State Summary` =
+      state_summary_table,
+
+    `Top 15 States` =
+      top_15_states,
+
+    `All State Counts` =
+      state_counts,
+
+    `Country Summary` =
+      country_summary_table,
+
+    `Top 15 Countries` =
+      top_15_countries,
+
+    `All Country Counts` =
+      country_counts
   ),
   output_file
 )
