@@ -27,7 +27,7 @@ Upload the cleaned de-duplicated Excel file into the `input/` subfolder. The Exc
 
 ## Create and Update "Standarize Affiliations" Script
 
-In RStudio, create the script `02_standardize_affiliations.R`. Then, update the following lines with the correct file paths: `path_to_deduplicated_dataset`, `path_to_dated_institutions.csv`, `path_to_dated_institution_aliases.csv`, `path_to_unmatched_affiliations.csv`, and `path_to_deduplicated_dataset-standardized.xlsx`.
+In RStudio, create the script `02_standardize_affiliations.R`. Then, update the following lines with the correct file paths: `path_to_deduplicated_dataset.xlsx`, `path_to_dated_institutions.csv`, `path_to_dated_institution_aliases.csv`, `path_to_unmatched_affiliations.csv`, and `path_to_deduplicated_dataset-standardized.xlsx`.
 
 ```r
 # Load libraries
@@ -38,8 +38,23 @@ library(stringr)
 library(readr)
 library(writexl)
 
+# Import data
+input_file <- "path_to_dedeuplicated dataset.xlsx" # Update file path to cleaned de-duplicated OpenRefine dataset
+
+institutions_file <-"path_to_dated institutions.csv" # Update file path to institutions crosswalk
+
+aliases_file <- "path_to_date_institution_aliases.csv" # Update file path to institution aliases
+
+unmatched_file <- "path_to_unmatched_affiliations.csv" # Update file path to unmatched affiliations spreadsheet
+
+output_file <- "path_to_deduplicated_dataset-standarized.xlsx" # Update file path to output folder
+
+# Combine unique nonblank values into one semicolon-separated string.
 collapse_unique <- function(x) {
+
   values <- x |>
+    as.character() |>
+    na_if("") |>
     na.omit() |>
     unique() |>
     sort()
@@ -51,12 +66,28 @@ collapse_unique <- function(x) {
   }
 }
 
+# Confirm that a data frame contains the required columns.
+check_required_columns <- function(data, required, data_name) {
+
+  missing_columns <- setdiff(
+    required,
+    names(data)
+  )
+
+  if (length(missing_columns) > 0) {
+    stop(
+      data_name,
+      " is missing these required columns: ",
+      paste(missing_columns, collapse = ", ")
+    )
+  }
+}
+
 # Import publication data
-publications <- read_excel(
-  "path_to_deduplicated_dataset" # Update file path to de-duplicated Excel file
-) |>
+publications <- read_excel(input_file) |>
   mutate(
     publication_row_id = row_number(),
+
     source = recode(
       DB,
       "ISI" = "Web of Science",
@@ -64,7 +95,19 @@ publications <- read_excel(
     )
   )
 
-# Convert the publication-level affiliation column to long form
+
+# Confirm that the OpenRefine export has the necessary columns.
+check_required_columns(
+  publications,
+  required = c(
+    "DB",
+    "affiliations",
+    "affiliations_key"
+  ),
+  data_name = "The publication workbook"
+)
+
+# Convert affiliations to long form
 affiliations_long <- publications |>
   select(
     publication_row_id,
@@ -84,47 +127,157 @@ affiliations_long <- publications |>
     observed_key != ""
   )
 
-# Import crosswalk tables
+# Import the institutional crosswalk
+
 institutions <- read_csv(
-  "path_to_dated_institutions.csv", # Update path to dated "institutions.csv" file in the data/ subfolder
-  col_types = cols(.default = col_character())
+  institutions_file,
+  col_types = cols(.default = col_character()),
+  show_col_types = FALSE
 )
 
 aliases <- read_csv(
-  "path_to_dated_institution_aliases.csv", # Update path to dated "institution_aliases.csv" file in the data/subfolder
-  col_types = cols(.default = col_character())
-) |>
+  aliases_file,
+  col_types = cols(.default = col_character()),
+  show_col_types = FALSE
+)
+
+
+# Confirm that institutions.csv has the necessary columns.
+check_required_columns(
+  institutions,
+  required = c(
+    "institution_id",
+    "canonical_name",
+    "ipeds_unitid",
+    "ror_id",
+    "entity_type",
+    "state_code",
+    "country_code"
+  ),
+  data_name = "institutions.csv"
+)
+
+
+# Confirm that institution_aliases.csv has the necessary columns.
+check_required_columns(
+  aliases,
+  required = c(
+    "source",
+    "observed_key",
+    "institution_id",
+    "review_status"
+  ),
+  data_name = "institution_aliases.csv"
+)
+
+
+# Keep only approved mappings.
+aliases <- aliases |>
   filter(review_status == "approved")
 
-# Check columns
-names(aliases)
-names(institutions)
+
+# Stop if an approved alias is missing an institution ID.
+approved_without_id <- aliases |>
+  filter(
+    is.na(institution_id),
+    institution_id == ""
+  )
+
+if (nrow(approved_without_id) > 0) {
+  stop(
+    "At least one approved alias is missing an institution_id."
+  )
+}
 
 
-# Match source plus affiliation key
+# Stop if the same source and alias combination appears more than once.
+duplicate_aliases <- aliases |>
+  count(
+    source,
+    observed_key,
+    name = "row_count"
+  ) |>
+  filter(row_count > 1)
+
+if (nrow(duplicate_aliases) > 0) {
+
+  print(duplicate_aliases)
+
+  stop(
+    "Duplicate source and observed_key combinations were found ",
+    "in institution_aliases.csv."
+  )
+}
+
+
+# Stop if an alias points to an institution that is absent from institutions.csv.
+orphan_aliases <- aliases |>
+  anti_join(
+    institutions,
+    by = "institution_id"
+  )
+
+if (nrow(orphan_aliases) > 0) {
+
+  print(
+    orphan_aliases |>
+      select(
+        source,
+        observed_key,
+        institution_id
+      )
+  )
+
+  stop(
+    "At least one approved alias points to an institution_id ",
+    "that is missing from institutions.csv."
+  )
+}
+
+# Match affiliations to institutions
+
 matched_affiliations <- affiliations_long |>
   left_join(
     aliases |>
-      select(source, observed_key, institution_id),
-    by = c("source", "observed_key")
+      select(
+        source,
+        observed_key,
+        institution_id
+      ),
+    by = c(
+      "source",
+      "observed_key"
+    )
   ) |>
   left_join(
     institutions,
     by = "institution_id"
   )
 
-# Create an updated unmatched-review file
-unmatched <- matched_affiliations |>
+# Create an unmatched affiliation review file
+
+nmatched <- matched_affiliations |>
   filter(is.na(institution_id)) |>
-  count(source, observed_key, sort = TRUE)
+  count(
+    source,
+    observed_key,
+    sort = TRUE,
+    name = "occurrences"
+  ) |>
+  mutate(
+    institution_id = NA_character_,
+    review_status = "pending",
+    notes = NA_character_
+  )
+
 
 write_csv(
   unmatched,
-  "path_to_unmatched_affiliations.csv", # Update path to "unmatched affiliations.csv" in the review/ subfolder
+  unmatched_file,
   na = ""
 )
 
-# Prevent repeated authors from causing repeated institution matches
+# Create one row per publication and institution
 publication_institutions <- matched_affiliations |>
   filter(!is.na(institution_id)) |>
   distinct(
@@ -133,8 +286,9 @@ publication_institutions <- matched_affiliations |>
     .keep_all = TRUE
   )
 
-# Produce publication-level standardized columns
-standardized_summary <- matched_affiliations |>
+# Create publication-level standardized column
+
+match_summary <- matched_affiliations |>
   group_by(publication_row_id) |>
   summarise(
     match_status = case_when(
@@ -142,39 +296,127 @@ standardized_summary <- matched_affiliations |>
       any(!is.na(institution_id)) ~ "partial",
       TRUE ~ "unmatched"
     ),
-    unmatched_affiliation_count = sum(is.na(institution_id)),
+
+    unmatched_affiliation_count =
+      sum(is.na(institution_id)),
+
     .groups = "drop"
-  ) |>
+  )
+
+
+institution_summary <- publication_institutions |>
+  group_by(publication_row_id) |>
+  summarise(
+    canonical_affiliations =
+      collapse_unique(canonical_name),
+
+    institution_ids =
+      collapse_unique(institution_id),
+
+    ipeds_unitids =
+      collapse_unique(ipeds_unitid),
+
+    ror_ids =
+      collapse_unique(ror_id),
+
+    entity_type =
+      collapse_unique(entity_type),
+
+    state_code =
+      collapse_unique(state_code),
+
+    country_code =
+      collapse_unique(country_code),
+
+    institution_count =
+      n_distinct(institution_id),
+
+    .groups = "drop"
+  )
+
+
+standardized_summary <- match_summary |>
   left_join(
-    publication_institutions |>
-      group_by(publication_row_id) |>
-      summarise(
-        canonical_affiliations =
-          collapse_unique(canonical_name),
-        institution_ids =
-          collapse_unique(institution_id),
-        ipeds_unitids =
-          collapse_unique(ipeds_unitid),
-        ror_ids =
-          collapse_unique(ror_id),
-        institution_count =
-          n_distinct(institution_id),
-        .groups = "drop"
-      ),
+    institution_summary,
     by = "publication_row_id"
   )
 
-# Add results without overwriting original affiliation columns
+# Add standardized results to the original publication records
+
 standardized_publications <- publications |>
   left_join(
     standardized_summary,
     by = "publication_row_id"
+  ) |>
+  mutate(
+    match_status = if_else(
+      is.na(match_status),
+      "no_affiliation_data",
+      match_status
+    ),
+
+    unmatched_affiliation_count = coalesce(
+      unmatched_affiliation_count,
+      0L
+    ),
+
+    institution_count = coalesce(
+      institution_count,
+      0L
+    )
+  )
+  
+# Create a publication-institution table
+
+publication_institution_detail <- publication_institutions |>
+  select(
+    publication_row_id,
+    source,
+    observed_key,
+    institution_id,
+    canonical_name,
+    entity_type,
+    state_code,
+    country_code,
+    ipeds_unitid,
+    ror_id
+  ) |>
+  arrange(
+    publication_row_id,
+    canonical_name
   )
 
+# Create a quality control summary
+
+quality_control <- standardized_publications |>
+  count(
+    match_status,
+    name = "publication_count"
+  ) |>
+  mutate(
+    percent = publication_count / sum(publication_count)
+  )
+
+# Export the standardized file
+
 write_xlsx(
-  standardized_publications,
-  "path_to_deduplicated_dataset-standardized.xlsx" # Update path to standardized output file in output/ subfolder (add -standardized.xlsx to the original file name)
+  list(
+    Publications =
+      standardized_publications,
+
+    `Publication Institutions` =
+      publication_institution_detail,
+
+    `Quality Control` =
+      quality_control
+  ),
+  output_file
 )
+
+
+message("Standardized workbook written to: ", output_file)
+
+message("Unmatched review file written to: ", unmatched_file)
 ```
 
 ## Run the Standardization Script
@@ -186,12 +428,9 @@ Run the standardization script to split the `affiliations_key` into individual a
 Add the following code to the end of the standardization script:
 
 ```r
-# Review the results
+print(quality_control)
 
-standardized_publications |>
-  count(match_status)
 
-# Check examples
 standardized_publications |>
   filter(match_status != "complete") |>
   select(
@@ -201,7 +440,12 @@ standardized_publications |>
     affiliations,
     affiliations_key,
     canonical_affiliations,
-    match_status
+    institution_ids,
+    entity_type,
+    state_code,
+    country_code,
+    match_status,
+    unmatched_affiliation_count
   ) |>
   View()
 ```
