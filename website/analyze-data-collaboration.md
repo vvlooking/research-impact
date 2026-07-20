@@ -419,3 +419,130 @@ write_xlsx(
 
 message("Results written to: ", output_file)
 ```
+
+## Collaborating Entities
+
+Calculate the number of unique entities across publications by adding the following script:
+
+```r
+# Validate the column
+if (!"entity_type" %in% names(institutions)) {
+  stop(
+    "institutions.csv does not contain a column named ",
+    "'entity_type'."
+  )
+}
+
+# Create one row per publication and entity type
+
+publication_entity_types <- publication_institution_details |>
+  filter(
+    !is.na(entity_type),
+    entity_type != ""
+  ) |>
+  distinct(
+    publication_row_id,
+    entity_type
+  )
+  
+# Count unique entity types
+number_unique_entity_types <- publication_entity_types |>
+  summarise(
+    unique_entity_types = n_distinct(entity_type)
+  ) |>
+  pull(unique_entity_types)
+
+message(
+  "Number of unique entity types: ",
+  number_unique_entity_types
+)
+
+# Count publications per entity type
+entity_type_counts <- publication_entity_types |>
+  count(
+    entity_type,
+    name = "unique_publications",
+    sort = TRUE
+  ) |>
+  mutate(
+    rank = row_number()
+  ) |>
+  select(
+    rank,
+    entity_type,
+    unique_publications
+  )
+```
+
+Identify the top collaborating entities and export the results by adding the following script:
+
+```r
+# Select the top entity types
+
+top_15_entity_types <- entity_type_counts |>
+  slice_head(n = 15)
+
+print(top_15_entity_types)
+
+# Summary
+
+entity_type_summary_table <- tibble(
+  measure = c(
+    "Publications in input file",
+    "Publications with at least one identified entity type",
+    "Unique entity types",
+    "Publication-entity type combinations"
+  ),
+  value = c(
+    nrow(publications),
+    n_distinct(publication_entity_types$publication_row_id),
+    number_unique_entity_types,
+    nrow(publication_entity_types)
+  )
+)
+
+# Update Excel export
+
+write_xlsx(
+  list(
+    Summary =
+      summary_table,
+
+    `Top 15 Institutions` =
+      top_15_institutions,
+
+    `All Institution Counts` =
+      institution_counts,
+
+    `State Summary` =
+      state_summary_table,
+
+    `Top 15 States` =
+      top_15_states,
+
+    `All State Counts` =
+      state_counts,
+
+    `Country Summary` =
+      country_summary_table,
+
+    `Top 15 Countries` =
+      top_15_countries,
+
+    `All Country Counts` =
+      country_counts,
+
+    `Entity Type Summary` =
+      entity_type_summary_table,
+
+    `Top 15 Entity Types` =
+      top_15_entity_types,
+
+    `All Entity Type Counts` =
+      entity_type_counts
+  ),
+  output_file
+)
+
+message("Results written to: ", output_file)
+```
