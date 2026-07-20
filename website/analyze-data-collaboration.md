@@ -19,7 +19,7 @@
 
 ## Collaborating Authors
 
-Calculate the number of unique co-authors across publications by running the following script. Update the file path for `file_name.xlsx`.
+Calculate the number of unique co-authors across publications by running the following script. Update the file path for `file_name.xlsx` and update the faculty names to exclude under `faculty_exclude`.
 
 ```r
 # Load libraries
@@ -73,7 +73,7 @@ author_counts <- authors_long %>%
 author_counts
 ```
 
-For individual reports, calculate the average number of co-authors per publication by running the following script. Update the file path for `file_name.xlsx`.
+For individual reports, calculate the average number of co-authors per publication by running the following script. Update the file path for `file_name.xlsx` and update the author's name in `Last Name F`.
 
 ```r
 # Load libraries
@@ -125,7 +125,7 @@ summary_stats <- coauthor_counts %>%
 summary_stats
 ```
 
-For group reports, calculate the average number of co-authors per publication by running the following script. Update the file path for `file_name.xlsx`.
+For group reports, calculate the average number of co-authors per publication by running the following script. Update the file path for `file_name.xlsx` and update the faculty names to exclude under `faculty_exclude`.
 
 ```r
 ## Average number of co-authors per document (Group Reports)
