@@ -5,20 +5,191 @@
 - [ ] Calculate the number of unique co-authors
 - [ ] Calculate the average number of co-authors per publication
 - [ ] Identify the top collaborating authors
-- [ ] Create a collaboration network visualization (authors)
+- [ ] Create a collaboration network visualization (authors) in VOSViewer
 - [ ] Calculate the number of unique institutions
 - [ ] Identify the top collaborating institutions
-- [ ] Create a collaboration network visualization (institutions)
+- [ ] Create a collaboration network visualization (institutions) in VOSViewer
 - [ ] Calculate the number of unique states
 - [ ] Identify the top collaborating states
-- [ ] Create a collaboration network visualization (states)
+- [ ] Create a collaboration network visualization (states) in VOSViewer
 - [ ] Calculate the number of unique countries
 - [ ] Identify the top collaborating countries
-- [ ] Create a collaboration network visualization (countries)
+- [ ] Create a collaboration network visualization (countries) in VOSViewer
 
 
 ## Collaborating Authors
 
+Calculate the number of unique co-authors across publications by running the following script. Update the file path for `file_name.xlsx`.
+
+```r
+# Load libraries
+library(dplyr)
+library(stringr)
+library(readxl)
+library(tidyr)
+
+# Read data
+df <- read_excel("file_name") # Add file path
+
+# Faculty to exclude (update names)
+faculty_exclude <- c(
+  "Doe J",
+  "Smith J",
+  "Jones R"
+)
+
+# Clean and filter author names
+authors_long <- df %>%
+  select(AU_key) %>%
+  filter(!is.na(AU_key) & AU_key != "") %>%
+  separate_rows(AU_key, sep = "\\s*;\\s*") %>%
+  mutate(
+    AU_key = str_trim(AU_key),
+    AU_key = str_replace_all(AU_key, "\\s+", " ")
+  ) %>%
+  filter(
+    AU_key != "",
+    !(AU_key %in% faculty_exclude)   # <-- exclude all faculty names
+  )
+
+# Count unique co-author names
+unique_authors <- authors_long %>%
+  distinct(AU_key)
+
+n_unique_authors <- nrow(unique_authors)
+
+cat("Number of unique co-author names (excluding faculty list):",
+    n_unique_authors, "\n")
+
+# View the unique names
+unique_authors %>%
+  arrange(AU_key) %>%
+  View()
+
+# Frequency of each co-author
+author_counts <- authors_long %>%
+  count(AU_key, sort = TRUE)
+
+author_counts
+```
+
+For individual reports, calculate the average number of co-authors per publication by running the following script. Update the file path for `file_name.xlsx`.
+
+```r
+# Load libraries
+library(dplyr)
+library(tidyr)
+library(stringr)
+library(readxl)
+
+# Read data
+df <- read_excel("file_name") # Add file path
+
+# Add a document ID
+df <- df %>%
+  mutate(doc_id = row_number())
+
+# Split authors into long format
+authors_long <- df %>%
+  select(doc_id, AU_key) %>%
+  filter(!is.na(AU_key) & AU_key != "") %>%
+  separate_rows(AU_key, sep = "\\s*;\\s*") %>%
+  mutate(
+    AU_key = str_trim(AU_key),
+    AU_key = str_replace_all(AU_key, "\\s+", " ")
+  ) %>%
+  filter(AU_key != "")
+
+# Count authors per document
+coauthor_counts <- authors_long %>%
+  group_by(doc_id) %>%
+  summarise(
+    total_authors = n_distinct(AU_key),
+    focal_author_present = any(AU_key == "Last Name F"), # Add author name here
+    coauthors = ifelse(focal_author_present,
+                       total_authors - 1,
+                       total_authors),
+    .groups = "drop"
+  )
+
+# Calculate summary statistics
+summary_stats <- coauthor_counts %>%
+  summarise(
+    documents = n(),
+    mean_coauthors = round(mean(coauthors), 2),
+    median_coauthors = median(coauthors),
+    min_coauthors = min(coauthors),
+    max_coauthors = max(coauthors)
+  )
+
+summary_stats
+```
+
+For group reports, calculate the average number of co-authors per publication by running the following script. Update the file path for `file_name.xlsx`.
+
+```r
+## Average number of co-authors per document (Group Reports)
+
+# Load libraries
+library(dplyr)
+library(tidyr)
+library(stringr)
+library(readxl)
+
+# Read data
+df <- read_excel("file_name")  # Add file path
+
+# ---- Faculty to exclude ----
+faculty_exclude <- c(
+  "Doe J",
+  "Smith M",
+  "Dear, J"
+)
+
+# Add document ID
+df <- df %>%
+  mutate(doc_id = row_number())
+
+# Split authors into long format
+authors_long <- df %>%
+  select(doc_id, AU_key) %>%
+  filter(!is.na(AU_key) & AU_key != "") %>%
+  separate_rows(AU_key, sep = "\\s*;\\s*") %>%
+  mutate(
+    AU_key = str_trim(AU_key),
+    AU_key = str_replace_all(AU_key, "\\s+", " ")
+  ) %>%
+  filter(
+    AU_key != "",
+    !(AU_key %in% faculty_exclude)   # <-- REMOVE FACULTY HERE
+  )
+
+# Count remaining authors per document
+coauthor_counts <- authors_long %>%
+  group_by(doc_id) %>%
+  summarise(
+    coauthors = n_distinct(AU_key),
+    .groups = "drop"
+  )
+
+# Ensure documents with ONLY faculty don't disappear
+coauthor_counts <- df %>%
+  select(doc_id) %>%
+  left_join(coauthor_counts, by = "doc_id") %>%
+  mutate(coauthors = ifelse(is.na(coauthors), 0, coauthors))
+
+# Summary statistics
+summary_stats <- coauthor_counts %>%
+  summarise(
+    documents = n(),
+    mean_coauthors = round(mean(coauthors), 2),
+    median_coauthors = median(coauthors),
+    min_coauthors = min(coauthors),
+    max_coauthors = max(coauthors)
+  )
+
+summary_stats
+```
 
 ## Collaborating Institutions
 
