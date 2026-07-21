@@ -14,8 +14,8 @@ Add a description of your project here. Add a full checklist here
   - [ ] Dissemination
   - [ ] Collaboration 
 - [ ] Prepare report
--   [ ] Narrative
--   [ ] Appendix 
+  -  [ ] Narrative
+  -  [ ] Appendix 
 
 ## Explore the Site
 
