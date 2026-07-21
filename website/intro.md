@@ -9,7 +9,13 @@ Add a description of your project here. Add a full checklist here
 - [ ] Export data
 - [ ] Clean data
 - [ ] Analyze data
+  - [ ] Quick summary
+  - [ ] Productivity
+  - [ ] Dissemination
+  - [ ] Collaboration 
 - [ ] Prepare report
+-   [ ] Narrative
+-   [ ] Appendix 
 
 ## Explore the Site
 
