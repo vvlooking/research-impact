@@ -2,11 +2,18 @@
 
 ## Checklist
 
+- [ ] Create original and working folders
 - [ ] Export data from Scopus (csv)
 - [ ] Export data from Web of Science (bibtex)
 - [ ] Export data from Dimensions (csv)
 - [ ] Convert Web of Science file to a csv
 - [ ] Standardize column names
+
+## Create Original and Working Folders
+Create a folder titled "Exports," and then add subfolders titled "Original" and "Working".
+
+## Export data from Scopus
+Export Scopus data in a CSV format. Export citation information, bibliographical information, abstract & keywords, funding details, and other information. Save the file with a standard naming convention: last name/department-scopus-original (e.g., smith-scopus-original.csv; marketing-scopus-original.csv). Save the original export in the "Original" subfolder, and then add a copy to the "Working" folder and update the file name (e.g., smith-scopus-working.csv; marketing-scopus-working.csv).
 
 ## Convert Web of Science File to a CSV
 Use the following script to convert the original Web of Science (bibtex) file into a csv. Update the file paths for `C:/path/to/your/wos_file.bib` and `C:/path/to/your/wos_converted.csv`.
