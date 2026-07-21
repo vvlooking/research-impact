@@ -6,6 +6,11 @@ Add a blurb about what this site is. An overview checklist is available below. N
 
 Add a description of your project here. Add a full checklist here
 
+- [ ] Export data
+- [ ] Clean data
+- [ ] Analyze data
+- [ ] Prepare report
+
 ## Explore the Site
 
 Use the navigation menu to browse the available pages.
