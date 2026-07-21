@@ -35,7 +35,7 @@ write.csv(W,
           row.names = FALSE)
 ```
 ## Standardize Column Names
-In the Scopus and Dimensions csv files, update the column names to the following:
+In the Scopus and Dimensions working csv files, update the column names to the following:
 
 - Author = AU
 - Title = TI
@@ -44,5 +44,7 @@ In the Scopus and Dimensions csv files, update the column names to the following
 - Year / Publication Year = PY
 - DOI = DI
 - Affiliations / Author Affiliations = affiliations
-
-Then, in all of the files, add the column "DB" and note the database name (i.e., Scopus, Dimensions, ISI).
+- Publication Type = DT
+- Abstract = AB
+  
+Then, add the column "DB" and note the database name (i.e., Scopus, Dimensions). Retain only the following columns in the Scopus, Web of Science, and Dimensions working files: DB, DI, TI, SO, AB, PY, DT, AU, TC, affiliations, KW_Merged (Web of Science only), Author Keywords (Scopus only), Index Keywords (Scopus only), RCR (in Dimensions only), FCR (in Dimensions only), and Fields of Research (in Dimensions only).
