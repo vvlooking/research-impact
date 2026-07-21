@@ -7,7 +7,15 @@ Add a blurb about what this site is. An overview checklist is available below. N
 Add a description of your project here. Add a full checklist here
 
 - [ ] Export data
+  - [ ] Scopus
+  - [ ] Web of Science
+  - [ ] Dimensions 
 - [ ] Clean data
+  -  [ ] Convert Web of Science file to a csv
+  -  [ ] OpenRefine
+  -  [ ] De-duplicate data
+  -  [ ] Apply crosswalk
+  -  [ ] Manually review and edit data
 - [ ] Analyze data
   - [ ] Quick summary
   - [ ] Productivity
