@@ -20,7 +20,8 @@ Add a description of your project here. Add a full checklist here
   - [ ] Quick summary
   - [ ] Productivity
   - [ ] Dissemination
-  - [ ] Collaboration 
+  - [ ] Collaboration
+  - [ ] Topical expertise
 - [ ] Prepare report
   -  [ ] Narrative
   -  [ ] Appendix 
