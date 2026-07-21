@@ -1,10 +1,8 @@
 # Introduction
-
-Add a blurb about what this site is. An overview checklist is available below. Navigate to the specific pages for a more detailed checklist and scripts for each section.
+This site describes how to create standard research impact reports. It includes checklists and scripts.
 
 ## Research Impact Report Checklist
-
-Add a description of your project here. Add a full checklist here
+Standard research impact reports follow four main steps: (1) exporting the data, (2) cleaning the data, (3) analyzing the data, and (4) preparing the report and supplemental materials. Use the following checklist to guide the reporting process. Instructions and scripts for each step are detailed in subsequent webpages.
 
 - [ ] Export data
   - [ ] Scopus
@@ -24,8 +22,4 @@ Add a description of your project here. Add a full checklist here
   - [ ] Topical expertise
 - [ ] Prepare report
   -  [ ] Narrative
-  -  [ ] Appendix 
-
-## Explore the Site
-
-Use the navigation menu to browse the available pages.
+  -  [ ] Appendix
