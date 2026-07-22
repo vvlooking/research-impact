@@ -12,6 +12,7 @@
 - [ ] Map new variants to existing institutions in the dated `institution_aliases.csv` file
 - [ ] Add new institutions, when necessary, to the dated `institutions.csv` file
 - [ ] Re-run `02_standardize_affiliations.R`
+- [ ] Update master institutional crosswalk
 
 ## Create a Folder Structure
 
