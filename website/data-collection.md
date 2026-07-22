@@ -22,7 +22,8 @@ Export Web of Science data in a BibTeX format. Export the full record and cited 
 Export Dimensions data in a CSV format. Export the full record. Save the file with a standard naming convention: last name/department-dimensions-original (e.g., smith-dimensions-original; marketing-dimensions-original). Save the original export in the "Original" subfolder, and then add a copy to the "Working" folder and update the file name (e.g., smith-dimensions-working; marketing-dimensions-working).
 
 ## Convert Web of Science File to a CSV
-Use the following script to convert the original Web of Science (bibtex) file into a csv. Update the file paths for `C:/path/to/your/wos_file.bib` and `C:/path/to/your/wos_converted.csv`.
+Use the following script to convert the original Web of Science (bibtex) file into a csv. Update the file paths for `C:/path/to/your/wos_file.bib` and `C:/path/to/your/wos_converted.csv`. Save a copy to the "Working" folder and update the file name (e.g., smith-isi-working; marketing-isi-working).
+
 
 ```r
 library(bibliometrix)
@@ -34,6 +35,7 @@ write.csv(W,
           "C:/path/to/your/wos_converted.csv", # update path name
           row.names = FALSE)
 ```
+
 ## Standardize Column Names
 In the Scopus and Dimensions working csv files, update the column names to the following:
 
@@ -47,4 +49,4 @@ In the Scopus and Dimensions working csv files, update the column names to the f
 - Publication Type = DT
 - Abstract = AB
   
-Then, add the column "DB" and note the database name (i.e., Scopus, Dimensions). Retain only the following columns in the Scopus, Web of Science, and Dimensions working files: DB, DI, TI, SO, AB, PY, DT, AU, TC, affiliations, KW_Merged (Web of Science only), Author Keywords (Scopus only), Index Keywords (Scopus only), RCR (in Dimensions only), FCR (in Dimensions only), and Fields of Research (in Dimensions only).
+Then, add the column "DB" and note the database name (i.e., Scopus, Dimensions, ISI). Retain only the following columns in the Scopus, Web of Science, and Dimensions working files: DB, DI, TI, SO, AB, PY, DT, AU, TC, affiliations, KW_Merged (Web of Science only), Author Keywords (Scopus only), Index Keywords (Scopus only), RCR (in Dimensions only), FCR (in Dimensions only), and Fields of Research (in Dimensions only).
