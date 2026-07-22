@@ -15,15 +15,15 @@
 
 ## Create a Folder Structure
 
-Create a parent folder, `institution-crosswalk` and include the following sub-folders  it: data, input, output, review, scripts.
+Create a parent folder, "institution-crosswalk" and include the following sub-folders  it: data, input, output, review, scripts.
 
 ## Create a Dated Copy of the Crosswalk Files
 
-Make copies of the crosswalk files with today's date and add them to the `data/` subfolder (e.g., `institutions-07.16.26.csv`, `institutions_aliases-07.16.26.csv`)
+Make copies of the crosswalk files with today's date and add them to the "data/" subfolder (e.g., `institutions-07.16.26.csv`, `institutions_aliases-07.16.26.csv`)
 
 ## Add the Cleaned Excel file to the input/ Subfolder
 
-Upload the cleaned de-duplicated Excel file into the `input/` subfolder. The Excel file should include at least the following columns: `DB`, `affiliations`, `affiliations_key`.
+Upload the cleaned de-duplicated Excel file into the "input/" subfolder. The Excel file should include at least the following columns: `DB`, `affiliations`, `affiliations_key`.
 
 ## Create and Update "Standarize Affiliations" Script
 
