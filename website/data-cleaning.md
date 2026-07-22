@@ -1,3 +1,10 @@
 # Data Cleaning
 
-Use this page to provide links, documents, tutorials, or other project resources.
+Data cleaning involves four steps, detailed in the pages that follow.
+
+## Checklist
+
+- [ ] Clean dataset in OpenRefine
+- [ ] De-duplicate data
+- [ ] Manually review and edit data
+- [ ] Standardize affiliations
