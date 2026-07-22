@@ -7,8 +7,8 @@ chapters:
   - file: data-cleaning
     sections:
       - file: data-cleaning-openrefine
-      - file: data-cleaning-crosswalk
       - file: data-cleaning-review
+      - file: data-cleaning-crosswalk
 
   - file: analyze-data
     sections:
