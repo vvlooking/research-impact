@@ -12,4 +12,4 @@ Create a working copy of the file exported from OpenRefine and use a standard na
 Ensure author names are formatted as Last Name First Intitial (e.g., Smith M; Doe J) in the `AU_key` column.
 
 ## Add Publication Types
-Include the appropriate publication type for each document (e.g., Article; Review; Book; Book Chapter; Preprint; Conference Proceedings; Abstract; Editorial Materials; Patents; Guidelines)
+Verify the publication type for each document (e.g., Article; Review; Book; Book Chapter; Preprint; Conference Proceedings; Abstract; Editorial Materials; Patents; Guidelines)
