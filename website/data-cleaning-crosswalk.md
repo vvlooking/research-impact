@@ -41,13 +41,13 @@ library(writexl)
 # Import data
 input_file <- "path_to_dedeuplicated dataset.xlsx" # Update file path to cleaned de-duplicated OpenRefine dataset
 
-institutions_file <-"path_to_dated institutions.csv" # Update file path to institutions crosswalk
+institutions_file <-"path_to_dated institutions.csv" # Update file path to institutions crosswalk (input/ subfolder)
 
-aliases_file <- "path_to_date_institution_aliases.csv" # Update file path to institution aliases
+aliases_file <- "path_to_date_institution_aliases.csv" # Update file path to institution aliases (data/ subfolder)
 
-unmatched_file <- "path_to_unmatched_affiliations.csv" # Update file path to unmatched affiliations spreadsheet
+unmatched_file <- "path_to_unmatched_affiliations.csv" # Update file path to unmatched affiliations spreadsheet (review/ subfolder)
 
-output_file <- "path_to_deduplicated_dataset-standarized.xlsx" # Update file path to output folder
+output_file <- "path_to_deduplicated_dataset-standarized.xlsx" # Update file path to output folder (output/ subfolder)
 
 # Combine unique nonblank values into one semicolon-separated string.
 collapse_unique <- function(x) {
@@ -256,7 +256,7 @@ matched_affiliations <- affiliations_long |>
 
 # Create an unmatched affiliation review file
 
-nmatched <- matched_affiliations |>
+unmatched <- matched_affiliations |>
   filter(is.na(institution_id)) |>
   count(
     source,
