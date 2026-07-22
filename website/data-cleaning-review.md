@@ -6,7 +6,7 @@
 - [ ] Add publication types
 
 ## De-deuplicate Documents
-Create a copy of the file
+Create a working copy of the file exported from OpenRefine and use a standard naming convention (e.g., smith-combined-deduplicated; marketing-combined-deduplicated). Save the file in the "Working" subfolder. Then, delete duplicate documents, retaining the record from the database with the most comprehensive indexing, by sorting first by the DOI and then the title. For each document, keep the following unique columns, regardless of which record is retained: FCR, RCR, Fields of Research, KW_Merged, Author Keywords, and Index Keywords.
 
 ## Review Author Names
 Ensure author names are formatted as Last Name First Intitial (e.g., Smith M; Doe J) in the `AU_key` column.
