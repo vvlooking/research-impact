@@ -82,4 +82,4 @@ value
 For the columns `AU_key` and `SO_key`, select "Column menu," then "Edit cells." Select "Cluster and Edit." Run key collison methods (e.g., fingerprint, n-gram fingerprint) and nearest neighbor (e.g., Levenshtein distance). Merge obvious variants (e.g., “J Med Libr Assoc” ↔ “Journal of the Medical Library Association”).
 
 ## Export Cleaned Dataset
-Export the cleaned dataset as an Excel file. Use a standard naming convention: last name/department-combined-original (e.g., smith-combined-original; marketing-combined-original). Then, create a working copy (e.g., smith-combined; marketing-combined).
+Export the cleaned dataset as an Excel file. Use a standard naming convention: last name/department-combined-original (e.g., smith-combined-original; marketing-combined-original). 
