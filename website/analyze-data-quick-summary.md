@@ -7,7 +7,9 @@
 - [ ] Calculate sum of times cited
 - [ ] Calculate the average number of citations per document
 - [ ] List the top three most cited documents
-- [ ] 
+- [ ] List the h-index (for individual reports only)
+- [ ] List the ORCID, Scopus Author, and Web of Science Researcher IDs (for individual reports only)
+      
 ## Create a Subfolder for Figures
 In the main project folder, create a subfolder titled "Figures." Use this folder to save figures created for the report.
 
