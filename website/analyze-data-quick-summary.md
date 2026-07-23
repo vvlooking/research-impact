@@ -2,10 +2,14 @@
 
 ## Checklist
 
+- [ ] Create a subfolder for figures
 - [ ] Create figure: "Total Citations of Documents Published Each Year"
 - [ ] Calculate sum of times cited
 - [ ] Calculate the average number of citations per document
 - [ ] List the top three most cited documents
+
+## Create a Subfolder for Figures
+Create a subfolder titled "Figures." Use this folder to save figures created for the report.
 
 ## Create Figure: "Total Citations of Documents Published Each Year"
 Create a stacked line graph to visualize the total number of citations and total number of documents published each year. In the script below, update the following lines with the correct file paths: `path_to_combined-deduplicated-standardized.xlsx` and `path_to_total-citations-of-documents-published-each-year.png`. Update the publication years for `PY >= START_YEAR, PY >= END_YEAR`, `breaks = START_YEAR:END_YEAR`, and `limits = c(START_YEAR, END_YEAR)`.
