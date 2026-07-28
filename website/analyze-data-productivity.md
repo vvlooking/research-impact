@@ -113,7 +113,7 @@ avg_publications_per_year
 ```
 
 ## Create Figure: "Average Productivity per Active Year"
-Create a bar graph to visualize the number of publications produced each year. In the script below, update the file path for `file_path_to_standardized_dataset.xlsx` and `path_to_figures_folder.png`, and then update the years for `START_YEAR` and `END_YEAR`.
+Create a bar graph to visualize the number of publications produced each year. In the script below, update the file path for `file_path_to_standardized_dataset.xlsx` and `path_to_figures_folder/average-productivity-per-year.png`, and then update the years for `START_YEAR` and `END_YEAR`.
 
 ```r
 # Load libraries
@@ -155,7 +155,7 @@ p <- ggplot(yearly_counts, aes(x = PY, y = Publications)) +
 p
 
 ggsave(
-  filename = "path_to_figures_folder.png", # Update file path to Figures folder
+  filename = "path_to_figures_folder/average-productivity-per-year.png", # Update file path to Figures folder
   plot     = p,
   width    = 7,
   height   = 4,
