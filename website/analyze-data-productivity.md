@@ -89,9 +89,6 @@ impact <- Hindex(
 print(impact$H)
 ```
 
-
-```r
-
 ## Calculate the Average Number of Documents Published per Year
 Calculate the average number of documents published per year by running the script below. Update the file path, `file_path_to_standardized_dataset.xlsx`.
 
