@@ -3,7 +3,7 @@
 ## Checklist
 
 - [ ] Calculate author indexes (individual reports only)
-- [ ] Calculate the number of documents published per year
+- [ ] Calculate the number of documents published per year (in Excel)
 - [ ] Calculate the average number of documents published per year
 - [ ] Create figure: "Average Productivity per Active Year"
 - [ ] Calculate the number and percentage of document types
@@ -88,3 +88,27 @@ impact <- Hindex(
 # Display h-index, g-index, m-index, citations, and papers
 print(impact$H)
 ```
+
+
+```r
+
+## Calculate the Average Number of Documents Published per Year
+Calculate the average number of documents published per year by running the script below. Update the file path, `file_path_to_standardized_dataset.xlsx`.
+
+```r
+# Load libraries
+library(readxl)
+library(dplyr)
+
+# Import spreadsheet (Excel)
+df <- read_excel("file_path_to_standardized_dataset.xlsx") # Update file path to the de-deduplicated standardized dataset
+
+pubs_per_year <- df %>%
+  mutate(PY = as.integer(PY)) %>%
+  count(PY, name = "Publications")
+
+pubs_per_year
+
+avg_publications_per_year <- mean(pubs_per_year$Publications)
+
+avg_publications_per_year
