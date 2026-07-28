@@ -7,7 +7,7 @@
 - [ ] Calculate the average number of documents published per year
 - [ ] Create table: "Number of Publications Produced per Year" (in Word)
 - [ ] Create figure: "Average Productivity per Active Year"
-- [ ] Calculate the number and percentage of document types
+- [ ] Calculate the number and percentage of document types (in Excel) and present them in a table (in Word)
 - [ ] Calculate the number of documents by authorship order (i.e., sole, first, and last author)
 
 ## Author Indexes
@@ -161,4 +161,87 @@ ggsave(
   height   = 4,
   dpi      = 300
 )
+```
+
+## Calculate the Number of Documents by Authorship Order
+First, identify the number of sole-authored publications using the script below. Update the file path for `file_path_to_standardized_dataset.xlsx`.
+
+```r
+# Load libraries
+library(readxl)
+library(dplyr)
+library(stringr)
+
+# Import spreadsheet (Excel)
+df <- read_excel("file_path_to_standardized_dataset.xlsx") # Update file path to the de-deduplicated standardized dataset
+
+solo_authored <- df %>%
+  filter(!is.na(AU_key) & AU_key != "") %>%
+  mutate(
+    n_authors = str_count(AU_key, ";") + 1
+  ) %>%
+  filter(n_authors == 1)
+
+# Number of solo-authored articles
+n_solo <- nrow(solo_authored)
+
+n_solo
+
+total_articles <- df %>%
+  filter(!is.na(AU_key) & AU_key != "") %>%
+  nrow()
+
+pct_solo <- n_solo / total_articles * 100
+
+pct_solo
+
+solo_authored %>%
+  select(AU_key, PY) %>%
+  head(10)
+```
+
+Then, identify the number of co-authored publications on which the researcher(s) served as first and/or last author. Update `faculty_string` with the relevant names.
+
+```r
+# First author
+
+faculty_string <- "Doe J; Smith J" # Adjust names
+
+faculty <- str_split(faculty_string, ";\\s*")[[1]] %>%
+  str_squish()
+
+coauthored_df <- df %>%
+  filter(!is.na(AU_key) & AU_key != "") %>%
+  mutate(
+    author_count = str_count(AU_key, ";") + 1,
+    first_author = str_trim(str_extract(AU_key, "^[^;]+"))
+  ) %>%
+  filter(author_count > 1)
+
+first_author_counts <- coauthored_df %>%
+  filter(first_author %in% faculty) %>%
+  count(first_author, sort = TRUE)
+
+first_author_counts
+
+# Last Author
+
+faculty_string <- "Doe J; Smith J" # Adjust names
+
+faculty <- str_split(faculty_string, ";\\s*")[[1]] %>%
+  str_squish()
+
+coauthored_df <- df %>%
+  filter(!is.na(AU_key) & AU_key != "") %>%
+  mutate(
+    author_count = str_count(AU_key, ";") + 1,
+    last_author = str_trim(str_extract(AU_key, "[^;]+$"))
+  ) %>%
+  filter(author_count > 1)
+
+last_author_counts <- coauthored_df %>%
+  filter(last_author %in% faculty) %>%
+  count(last_author, sort = TRUE)
+
+last_author_counts
 ```
