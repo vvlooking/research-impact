@@ -105,7 +105,7 @@ pubs_per_year <- df %>%
   count(PY, name = "Publications")
 
 pubs_per_year
-```
+
 avg_publications_per_year <- mean(pubs_per_year$Publications)
 
 avg_publications_per_year
