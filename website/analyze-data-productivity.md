@@ -91,7 +91,7 @@ print(impact$H)
 ```
 
 ## Calculate the Average Number of Documents Published per Year
-Calculate the average number of documents published per year by running the script below. Update the file paths, `path_to_standardized_dataset.xlsx` and `path_to_figures_folder.png`
+Calculate the average number of documents published each year by running the script below. Update the file paths, `path_to_standardized_dataset.xlsx` and `path_to_figures_folder.png`
 
 ```r
 # Load libraries
@@ -127,7 +127,7 @@ df <- read_excel("file_path_to_standardized_dataset.xlsx") # Update file path to
 
 
 yearly_counts <- df %>%
-  filter(PY >= 2019, PY <= 2025) %>% # adjust years
+  filter(PY >= START_YEAR, PY <= END_YEAR) %>% # Update the publication start and end years
   mutate(PY = as.integer(PY)) %>%
   count(PY, name = "Publications") %>%
   complete(PY = START_YEAR:END_YEAR, fill = list(Publications = 0)) %>% # Update the publication start and end years
