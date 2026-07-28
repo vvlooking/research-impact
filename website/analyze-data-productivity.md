@@ -10,7 +10,7 @@
 - [ ] Calculate the number of documents by authorship order (i.e., sole, first, and last author)
 
 ## Author Indexes
-Identify the researcher's i10-index using their Google Scholar profile. Calculate the researcher's h-index, g-index, and m-index using the script below. Update the file path for 'file_path_to_standardized_dataset.xlsx` and specify the researcher's name in the variable, `researcher_name <- LAST NAME INITIAL`.
+Identify the researcher's i10-index using their Google Scholar profile. Calculate the researcher's h-index, g-index, and m-index using the script below. Update the file path for `file_path_to_standardized_dataset.xlsx` and specify the researcher's name in the variable, `researcher_name <- LAST NAME INITIAL`.
 
 ```r
 # Load libraries
