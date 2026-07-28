@@ -4,8 +4,8 @@
 
 - [ ] Create a subfolder for figures
 - [ ] Create figure: "Total Citations of Documents Published Each Year"
-- [ ] Calculate sum of times cited
-- [ ] Calculate the average number of citations per document
+- [ ] Calculate sum of times cited (in Excel)
+- [ ] Calculate the average number of citations per document (in Excel)
 - [ ] List the top three most cited documents
 - [ ] List the h-index (for individual reports only)
 - [ ] List the ORCID, Scopus Author, and Web of Science Researcher IDs (for individual reports only)
