@@ -5,6 +5,7 @@
 - [ ] Calculate author indexes (individual reports only)
 - [ ] Calculate the number of documents published per year (in Excel)
 - [ ] Calculate the average number of documents published per year
+- [ ] Create table: "Number of Publications Produced per Year" (in Word)
 - [ ] Create figure: "Average Productivity per Active Year"
 - [ ] Calculate the number and percentage of document types
 - [ ] Calculate the number of documents by authorship order (i.e., sole, first, and last author)
@@ -110,3 +111,55 @@ avg_publications_per_year <- mean(pubs_per_year$Publications)
 
 avg_publications_per_year
 ```
+
+## Create Figure: "Average Productivity per Active Year"
+Create a bar graph to visualize the number of publications produced each year. In the script below, update the file path for `file_path_to_standardized_dataset.xlsx`.
+
+
+## Figure (Average Productivity per Active Year)
+
+# Load libraries
+library(readr)
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+
+# Import spreadsheet (Excel)
+df <- read_excel("file_path_to_standardized_dataset.xlsx") # Update file path to the de-deduplicated standardized dataset
+
+
+yearly_counts <- df %>%
+  filter(PY >= 2019, PY <= 2025) %>% # adjust years
+  mutate(PY = as.integer(PY)) %>%
+  count(PY, name = "Publications") %>%
+  complete(PY = START_YEAR:END_YEAR, fill = list(Publications = 0)) %>% # adjust years
+  arrange(PY)
+
+# Average publications per ACTIVE year (exclude years with 0 pubs)
+avg_pubs_active_year <- yearly_counts %>%
+  filter(Publications > 0) %>%
+  summarise(avg = mean(Publications)) %>%
+  pull(avg)
+
+avg_pubs_active_year
+
+# Create figure
+p <- ggplot(yearly_counts, aes(x = PY, y = Publications)) +
+  geom_col(fill = "#73000a") +
+  geom_hline(yintercept = avg_pubs_active_year, linetype = "dashed", linewidth = 1) +
+  scale_x_continuous(breaks = seq(2019, 2025, by = 1)) + # adjust years
+  labs(
+    x = "Publication Year",
+    y = "Number of Publications",
+    ) +
+  theme_minimal(base_size = 14)
+
+p
+
+ggsave(
+  filename = "file_name", # adjust file name
+  plot     = p,
+  width    = 7,
+  height   = 4,
+  dpi      = 300
+)
