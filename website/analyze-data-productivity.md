@@ -91,7 +91,7 @@ print(impact$H)
 ```
 
 ## Calculate the Average Number of Documents Published per Year
-Calculate the average number of documents published per year by running the script below. Update the file path, `file_path_to_standardized_dataset.xlsx`.
+Calculate the average number of documents published per year by running the script below. Update the file paths, `path_to_standardized_dataset.xlsx` and `path_to_figures_folder.png`
 
 ```r
 # Load libraries
@@ -99,7 +99,7 @@ library(readxl)
 library(dplyr)
 
 # Import spreadsheet (Excel)
-df <- read_excel("file_path_to_standardized_dataset.xlsx") # Update file path to the de-deduplicated standardized dataset
+df <- read_excel("path_to_standardized_dataset.xlsx") # Update file path to the de-deduplicated standardized dataset
 
 pubs_per_year <- df %>%
   mutate(PY = as.integer(PY)) %>%
@@ -113,11 +113,9 @@ avg_publications_per_year
 ```
 
 ## Create Figure: "Average Productivity per Active Year"
-Create a bar graph to visualize the number of publications produced each year. In the script below, update the file path for `file_path_to_standardized_dataset.xlsx`.
+Create a bar graph to visualize the number of publications produced each year. In the script below, update the file path for `file_path_to_standardized_dataset.xlsx` and `path_to_figures_folder.png`, and then update the years for `START_YEAR` and `END_YEAR`.
 
-
-## Figure (Average Productivity per Active Year)
-
+```r
 # Load libraries
 library(readr)
 library(dplyr)
@@ -132,7 +130,7 @@ yearly_counts <- df %>%
   filter(PY >= 2019, PY <= 2025) %>% # adjust years
   mutate(PY = as.integer(PY)) %>%
   count(PY, name = "Publications") %>%
-  complete(PY = START_YEAR:END_YEAR, fill = list(Publications = 0)) %>% # adjust years
+  complete(PY = START_YEAR:END_YEAR, fill = list(Publications = 0)) %>% # Update the publication start and end years
   arrange(PY)
 
 # Average publications per ACTIVE year (exclude years with 0 pubs)
@@ -147,7 +145,7 @@ avg_pubs_active_year
 p <- ggplot(yearly_counts, aes(x = PY, y = Publications)) +
   geom_col(fill = "#73000a") +
   geom_hline(yintercept = avg_pubs_active_year, linetype = "dashed", linewidth = 1) +
-  scale_x_continuous(breaks = seq(2019, 2025, by = 1)) + # adjust years
+  scale_x_continuous(breaks = seq(START_YEAR, END_YEAR, by = 1)) + # Update the publication start and end years
   labs(
     x = "Publication Year",
     y = "Number of Publications",
@@ -157,9 +155,10 @@ p <- ggplot(yearly_counts, aes(x = PY, y = Publications)) +
 p
 
 ggsave(
-  filename = "file_name", # adjust file name
+  filename = "path_to_figures_folder.png", # Update file path to Figures folder
   plot     = p,
   width    = 7,
   height   = 4,
   dpi      = 300
 )
+```
