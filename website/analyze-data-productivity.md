@@ -7,7 +7,7 @@
 - [ ] Calculate the average number of documents published per year
 - [ ] Create table: "Number of Publications Produced per Year" (in Word)
 - [ ] Create figure: "Average Productivity per Active Year"
-- [ ] Calculate the number and percentage of document types (in Excel) and present them in a table (in Word)
+- [ ] Calculate the number and percentage of document types (in Excel)
 - [ ] Calculate the number of documents by authorship order (i.e., sole, first, and last author)
 
 ## Author Indexes
