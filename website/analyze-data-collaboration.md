@@ -193,7 +193,7 @@ summary_stats
 
 ## Collaborating Institutions
 
-Calculate the number of unique institutions across publications by running the following script. Update the file paths for `input_file.xlsx`, `path_to_institutions.csv`, and `path_to_institution-counts.xlsx`.
+Calculate the number of unique institutions across publications by running the following script. Update the file paths for `input_file.xlsx`, `path_to_institutions.csv`, and `path_to_institution-counts.xlsx` (this will be a new file, "institution counts", that will be exported into the Outputs/ folder).
 
 ```r
 # Load libraries
