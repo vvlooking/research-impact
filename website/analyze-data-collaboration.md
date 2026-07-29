@@ -9,6 +9,8 @@
 - [ ] Calculate the number of unique institutions
 - [ ] Identify the top collaborating institutions
 - [ ] Create a collaboration network visualization (institutions) in VOSViewer
+- [ ] Identify the top collaborating units at USC
+- [ ] Create a collaboration network visualization (University of South Carolina)
 - [ ] Calculate the number of unique states
 - [ ] Identify the top collaborating states
 - [ ] Create a collaboration network visualization (states) in VOSViewer
