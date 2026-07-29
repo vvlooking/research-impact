@@ -285,7 +285,6 @@ institution_counts <- institution_counts |>
         institution_id,
         canonical_name,
         entity_type,
-        city,
         state_code,
         country_code,
         ipeds_unitid,
