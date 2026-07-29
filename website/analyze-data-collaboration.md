@@ -298,7 +298,6 @@ institution_counts <- institution_counts |>
     canonical_name,
     unique_publications,
     entity_type,
-    city,
     state_code,
     country_code,
     ipeds_unitid,
