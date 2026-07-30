@@ -193,6 +193,16 @@ summary_stats <- coauthor_counts %>%
 summary_stats
 ```
 
+## Create a Collaboration Network Visualization (Authors) in VOSViewer
+Create a duplicate copy of the `deduplicated-standardized.xlsx` file, save it as a csv, and rename it as `last-name/department-vosviewer-authors.csv`. Create a new column, "Authors," and use the formula below (replacing A2 with the corresponding cell number in the AU_key column). Apply the formula to the remaining cells. Make sure the cells are pasted as values before saving the file.
+
+```r
+=TEXTJOIN("; ",TRUE,MAP(TEXTSPLIT(A2,"; "),LAMBDA(n,LET(parts,TEXTSPLIT(TRIM(n)," "),last,TAKE(parts,,1),initials,DROP(parts,,1),last&" "&TEXTJOIN(".",TRUE,MID(TEXTJOIN("",TRUE,initials),SEQUENCE(LEN(TEXTJOIN("",TRUE,initials))),1))&"."))))
+```
+
+In VOSViewer, click "Create," then "Create a Map Based on Bibliometric Data." Select "Read Data from Bibliographic Database Files," select Scopus, and upload the edited csv file. Select "Co-Authorship" as the type of analysis and "Authors" as the unit of analysis.
+
+
 ## Collaborating Institutions
 
 Calculate the number of unique institutions across publications by running the following script. Update the file paths for `input_file.xlsx`, `path_to_institutions.csv`, and `path_to_institution-counts.xlsx` (this will be a new file, "institution counts", that will be exported into the Outputs/ folder).
