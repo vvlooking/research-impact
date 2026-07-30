@@ -194,7 +194,8 @@ summary_stats
 ```
 
 ## Create a Collaboration Network Visualization (Authors) in VOSViewer
-Create a duplicate copy of the `deduplicated-standardized.xlsx` file, save it as a csv, and rename it as `last-name/department-vosviewer-authors.csv`. Create a new column, "Authors," and use the formula below (replacing A2 with the corresponding cell number in the AU_key column). Apply the formula to the remaining cells. Make sure the cells are pasted as values before saving the file.
+
+Create a duplicate copy of the `deduplicated-standardized.xlsx` file, save it as a csv, and rename it as `-vosviewer-authors.csv`. Create a new column, "Authors," and use the formula below (replacing `A2` with the corresponding cell number in the `AU_key` column). Apply the formula to the remaining cells. Make sure the cells are pasted as values before saving the file.
 
 ```r
 =TEXTJOIN("; ",TRUE,MAP(TEXTSPLIT(A2,"; "),LAMBDA(n,LET(parts,TEXTSPLIT(TRIM(n)," "),last,TAKE(parts,,1),initials,DROP(parts,,1),last&" "&TEXTJOIN(".",TRUE,MID(TEXTJOIN("",TRUE,initials),SEQUENCE(LEN(TEXTJOIN("",TRUE,initials))),1))&"."))))
@@ -366,6 +367,15 @@ write_xlsx(
 message("Results written to: ", output_file)
 ```
 
+## Create a Collaboration Network Visualization (Institutions) in VOSViewer
+
+Create a duplicate copy of the `deduplicated-standardized.xlsx` file, save it as a csv, and rename it as `-vosviewer-institutions.csv`. Create a new column, "Affiliations," and delete the "affiliations" column. Rename the "canonical_affiliations" column to "Affiliations."
+
+In VOSViewer, click "Create," then "Create a Map Based on Bibliometric Data." Select "Read Data from Bibliographic Database Files," select Scopus, and upload the edited csv file. Select "Co-Authorship" as the type of analysis and "Organizations" as the unit of analysis. Before selecting "Finish," right-click on the organizations and export all selected organizations. Name the txt file as "institution-thesaurus.txt."
+
+In Excel, click "Data," then "From Text/CSV." Load the txt file. Delete all the columns except for "Affiliations." Rename the column "Affiliations" as "label." Name the next column "replace by." For "university of south carolina," add the researcher's or department's name in the "replace by" column. Copy and paste the respective institution names in the "replace by" column. Save the file as a csv and title it "-vosviewer-institutions-thesaurus.csv".
+
+In VOSViewer, click "Create," then "Create a Map Based on Bibliometric Data." Select "Read Data from Bibliographic Database Files," select Scopus, and upload the edited csv file. Select "Co-Authorship" as the type of analysis and "Organizations" as the unit of analysis. Upload the thesaurus file.
 
 ## Collaborating States
 
