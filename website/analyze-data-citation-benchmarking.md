@@ -153,4 +153,4 @@ fcr_distribution
 ```
 
 ## Export, Clean, and De-Duplicate Citing Documents
-Export citing documents from Scopus, Web of Science and Dimensions. Follow the steps on the Data Cleaning webpage to prepare the citing documents for analysis. After the data has been prepared, create a duplicate copy of the file and delete self-citations.
+Export citing documents from Scopus and Web of Science. Follow the steps on the Data Cleaning webpage to prepare the citing documents for analysis. After the data has been prepared, create a duplicate copy of the file and delete self-citations.
