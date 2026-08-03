@@ -1,1 +1,156 @@
 # Citation Benchmarking
+
+## Checklist
+
+- [ ] Calculate citation counts across documents
+- [ ] Calculate relative citation ratio and field citation ratio across documents
+- [ ] Identify top articles by field citation ratio (in Excel)
+- [ ] Export, clean, and de-duplicate citing documents
+- [ ] Identify top journals of citing documents
+- [ ] Identify top affiliations of citing documents
+- [ ] Identify top countries of citing documents
+- [ ] Identify altmetric impact (e.g., book metrics, institutional repository downloads, public engagement and readership)
+
+## Calculate Citation Counts across Documents
+Calculate total citation count, mean citation count, and number of documents with at least one citation using the following script. Update the file path for `file_name`.
+
+```r
+# Load libraries
+library(readr)
+library(dplyr)
+library(readxl)
+
+# Read  data
+df <- read_excel("file_name") # Update file path
+
+df <- df %>%
+  rename(TC = `TC...35`)
+  
+summary(df$TC)
+
+nrow(df)
+
+tc_overview <- df %>%
+  summarise(
+    publications_total = n(),
+    citations_total = sum(TC, na.rm = TRUE),
+    citations_min = min(TC, na.rm = TRUE),
+    citations_median = median(TC, na.rm = TRUE),
+    citations_mean = mean(TC, na.rm = TRUE),
+    citations_max = max(TC, na.rm = TRUE),
+    publications_with_citations = sum(TC > 0, na.rm = TRUE),
+    pct_with_citations = round(mean(TC > 0, na.rm = TRUE) * 100, 1)
+  )
+
+tc_overview
+
+tc_distribution <- df %>%
+  mutate(
+    bucket = case_when(
+      TC == 0 ~ "0",
+      TC <= 5 ~ "1–5",
+      TC <= 10 ~ "6–10",
+      TC <= 25 ~ "11–25",
+      TRUE ~ "26+"
+    )
+  ) %>%
+  count(bucket) %>%
+
+  mutate(percent = round(n / sum(n) * 100, 1))
+
+tc_distribution
+```
+
+## Calculate Field Citation Ratio and Relative Citation Ratio across Documents
+Use the following script to calculate field citation ratio and relative citation ratio for available documents. Update the file path for `file_name`.
+
+```r
+# Load libraries
+library(dplyr)
+library(readxl)
+
+# Read file
+df <- read_excel("file_name") # Update file name
+
+# Make sure metrics are numeric
+df <- df %>%
+  mutate(
+    TC  = as.numeric(TC),
+    RCR = as.numeric(RCR),
+    FCR = as.numeric(FCR)
+  )
+
+# Overview function
+metric_overview <- function(data, col, positive_threshold = 0) {
+  data %>%
+    summarise(
+      publications_total = n(),
+      metric_total   = sum({{ col }}, na.rm = TRUE),
+      metric_min     = min({{ col }}, na.rm = TRUE),
+      metric_median  = median({{ col }}, na.rm = TRUE),
+      metric_mean    = mean({{ col }}, na.rm = TRUE),
+      metric_max     = max({{ col }}, na.rm = TRUE),
+      publications_with_value = sum({{ col }} > positive_threshold, na.rm = TRUE),
+      pct_with_value = round(mean({{ col }} > positive_threshold, na.rm = TRUE) * 100, 1)
+    )
+}
+
+# Distribution function
+metric_distribution <- function(data, col, type = c("tc", "ratio")) {
+  type <- match.arg(type)
+
+  if (type == "tc") {
+    data %>%
+      mutate(
+        bucket = case_when(
+          is.na({{ col }}) ~ "Missing",
+          {{ col }} == 0 ~ "0",
+          {{ col }} <= 5 ~ "1–5",
+          {{ col }} <= 10 ~ "6–10",
+          {{ col }} <= 25 ~ "11–25",
+          TRUE ~ "26+"
+        )
+      ) %>%
+      count(bucket) %>%
+      mutate(percent = round(n / sum(n) * 100, 1))
+  } else {
+    data %>%
+      mutate(
+        bucket = case_when(
+          is.na({{ col }}) ~ "Missing",
+          {{ col }} == 0 ~ "0",
+          {{ col }} < 1 ~ "<1.0",
+          {{ col }} < 2 ~ "1.0–<2.0",
+          {{ col }} < 5 ~ "2.0–<5.0",
+          {{ col }} < 10 ~ "5.0–<10.0",
+          TRUE ~ "10+"
+        )
+      ) %>%
+      count(bucket) %>%
+      mutate(percent = round(n / sum(n) * 100, 1))
+  }
+}
+
+# TC
+tc_overview <- metric_overview(df, TC)
+tc_distribution <- metric_distribution(df, TC, type = "tc")
+
+# RCR
+rcr_overview <- metric_overview(df, RCR)
+rcr_distribution <- metric_distribution(df, RCR, type = "ratio")
+
+# FCR
+fcr_overview <- metric_overview(df, FCR)
+fcr_distribution <- metric_distribution(df, FCR, type = "ratio")
+
+tc_overview
+rcr_overview
+fcr_overview
+
+tc_distribution
+rcr_distribution
+fcr_distribution
+```
+
+## Export, Clean, and De-Duplicate Citing Documents
+Export citing documents from Scopus, Web of Science and Dimensions. Follow the steps on the Data Cleaning webpage to prepare the citing documents for analysis. After the data has been prepared, create a duplicate copy of the file and delete self-citations.
