@@ -223,23 +223,23 @@ publications <- read_excel(input_file) |>
 if (!"institution_id" %in% names(publications)) {
   stop(
     "The input workbook does not contain a column named ",
-    "'institution_ids'."
+    "'institution_id'."
   )
 }
 
-# Convert institution_ids to long form
+# Convert institution_id to long form
 
 publication_institutions <- publications |>
   select(
     publication_row_id,
-    institution_ids
+    institution_id
   ) |>
   separate_longer_delim(
-    institution_ids,
+    institution_id,
     delim = ";"
   ) |>
   mutate(
-    institution_id = str_squish(institution_ids)
+    institution_id = str_squish(institution_id)
   ) |>
   filter(
     !is.na(institution_id),
