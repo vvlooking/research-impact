@@ -220,7 +220,7 @@ publications <- read_excel(input_file) |>
   mutate(publication_row_id = row_number())
 
 # Confirm that the required column exists
-if (!"institution_ids" %in% names(publications)) {
+if (!"institution_id" %in% names(publications)) {
   stop(
     "The input workbook does not contain a column named ",
     "'institution_ids'."
