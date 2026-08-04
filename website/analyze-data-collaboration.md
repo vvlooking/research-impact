@@ -730,7 +730,7 @@ In VOSViewer, click "Create," then "Create a Map Based on Bibliometric Data." Se
 
 ## Create a Collaboration Network Visualization (Institutions) in VOSViewer
 
-Create a duplicate copy of the `deduplicated-standardized.xlsx` file, save it as a csv, and rename it as `-vosviewer-institutions.csv`. Create a new column, "Affiliations," and delete the "affiliations" column. Rename the "canonical_affiliations" column to "Affiliations."
+Create a duplicate copy of the `deduplicated-standardized.xlsx` file, save it as a csv, and rename it as `-vosviewer-institutions.csv`. Rename the "canonical_affiliations" column to "Affiliations" and delete the "affiliations" column
 
 In VOSViewer, click "Create," then "Create a Map Based on Bibliometric Data." Select "Read Data from Bibliographic Database Files," select Scopus, and upload the edited csv file. Select "Co-Authorship" as the type of analysis and "Organizations" as the unit of analysis. Before selecting "Finish," right-click on the organizations and export all selected organizations. Name the txt file as "institution-thesaurus.txt."
 
