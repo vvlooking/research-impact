@@ -6,9 +6,9 @@
 - [ ] Calculate relative citation ratio and field citation ratio across documents
 - [ ] Identify top articles by field citation ratio (in Excel)
 - [ ] Export, clean, and de-duplicate citing documents
-- [ ] Identify top journals of citing documents
 - [ ] Identify top affiliations of citing documents
 - [ ] Identify top countries of citing documents
+- [ ] Identify top journals of citing documents
 - [ ] Identify altmetric impact (e.g., book metrics, institutional repository downloads, public engagement and readership)
 
 ## Calculate Citation Counts across Documents
@@ -189,3 +189,123 @@ Repeat the steps outlined on the [Clean Data in OpenRefine webpage](https://vvlo
 Create a working copy of the file exported from OpenRefine and use a standard naming convention (e.g., smith-combined-citing-deduplicated; marketing-combined-citing-deduplicated). Save the file in the “Citing Working” subfolder. Then, delete duplicate documents, retaining the record from the database with the most comprehensive indexing, by sorting first by the DOI and then the title. Ensure the number of de-duplicated documents equals the number of total citations reported. After the data has been prepared, create a duplicate copy of the file, titled "last-name/department-citing-noselfcitations.xlsx" and delete self-citations.
 
 Using the "last-name/department-citing-noselfcitations.xlsx" file, standardize institutions by following the directions on the [Update Institution Crosswalk webpage](https://vvlooking.github.io/research-impact/data-cleaning-crosswalk.html).
+
+## Identify Top affiliations of Citing Documents
+
+Calculate the number of unique citing institutions by running the following script. Update the file paths for input_file.xlsx, path_to_institutions.csv, and path_to_institution-counts.xlsx (this will be a new file, “institution counts”, that will be exported into the Outputs/ folder).
+
+```r
+# Load libraries
+
+library(readxl)
+library(readr)
+library(dplyr)
+library(tidyr)
+library(stringr)
+library(writexl)
+
+# Load files
+
+input_file <- "input_file.xlsx" # Update path to standardized citing Excel file
+institutions_file <- "path_to_institutions.csv" # Update path to institution crosswalk
+output_file <- "path_to_institution-counts.xlsx" # Update path to output folder
+
+# Import Excel file
+
+publications <- read_excel(input_file) |>
+  mutate(publication_row_id = row_number())
+
+# Confirm that the required column exists
+if (!"institution_ids" %in% names(publications)) {
+  stop(
+    "The input workbook does not contain a column named ",
+    "'institution_ids'."
+  )
+}
+
+# Convert institution_id to long form
+
+publication_institutions <- publications |>
+  select(
+    publication_row_id,
+    institution_ids
+  ) |>
+  separate_longer_delim(
+    institution_ids,
+    delim = ";"
+  ) |>
+  mutate(
+    institution_id = str_squish(institution_ids)
+  ) |>
+  filter(
+    !is.na(institution_id),
+    institution_id != ""
+  ) |>
+  distinct(
+    publication_row_id,
+    institution_id
+  )
+  
+# Count unique institutions
+
+number_unique_institutions <- publication_institutions |>
+  summarise(
+    unique_institutions = n_distinct(institution_id)
+  ) |>
+  pull(unique_institutions)
+
+message(
+  "Number of unique institutions: ",
+  number_unique_institutions
+)
+
+# Count publications per institution
+
+institution_counts <- publication_institutions |>
+  count(
+    institution_id,
+    name = "unique_publications",
+    sort = TRUE
+  )
+
+# Add canonical names and identifers
+
+institutions <- read_csv(
+  institutions_file,
+  col_types = cols(.default = col_character()),
+  show_col_types = FALSE
+)
+
+institution_counts <- institution_counts |>
+  left_join(
+    institutions |>
+      select(
+        institution_id,
+        canonical_name,
+        entity_type,
+        state_code,
+        country_code,
+        ipeds_unitid,
+        ror_id
+      ),
+    by = "institution_id"
+  ) |>
+  select(
+    rank = unique_publications,
+    institution_id,
+    canonical_name,
+    unique_publications,
+    entity_type,
+    state_code,
+    country_code,
+    ipeds_unitid,
+    ror_id
+  ) |>
+  arrange(
+    desc(unique_publications),
+    canonical_name
+  ) |>
+  mutate(
+    rank = row_number()
+  )
+```
