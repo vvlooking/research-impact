@@ -220,10 +220,10 @@ publications <- read_excel(input_file) |>
   mutate(publication_row_id = row_number())
 
 # Confirm that the required column exists
-if (!"institution_id" %in% names(publications)) {
+if (!"institution_ids" %in% names(publications)) {
   stop(
     "The input workbook does not contain a column named ",
-    "'institution_id'."
+    "'institution_ids'."
   )
 }
 
@@ -232,20 +232,19 @@ if (!"institution_id" %in% names(publications)) {
 publication_institutions <- publications |>
   select(
     publication_row_id,
-    institution_id
+    institution_ids
   ) |>
   separate_longer_delim(
-    institution_id,
+    institution_ids,
     delim = ";"
   ) |>
   mutate(
-    institution_id = str_squish(institution_id)
+    institution_id = str_squish(institution_ids)
   ) |>
   filter(
     !is.na(institution_id),
     institution_id != ""
   ) |>
-  # Count an institution only once per publication
   distinct(
     publication_row_id,
     institution_id
