@@ -190,7 +190,7 @@ Create a working copy of the file exported from OpenRefine and use a standard na
 
 Using the "last-name/department-citing-noselfcitations.xlsx" file, standardize institutions by following the directions on the [Update Institution Crosswalk webpage](https://vvlooking.github.io/research-impact/data-cleaning-crosswalk.html).
 
-## Identify Top affiliations of Citing Documents
+## Identify Top Affiliations of Citing Documents
 
 Calculate the number of unique citing institutions by running the following script. Update the file paths for input_file.xlsx, path_to_institutions.csv, and path_to_institution-counts.xlsx (this will be a new file, “institution counts”, that will be exported into the Outputs/ folder).
 
