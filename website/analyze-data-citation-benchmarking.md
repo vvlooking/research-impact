@@ -153,4 +153,39 @@ fcr_distribution
 ```
 
 ## Export, Clean, and De-Duplicate Citing Documents
-Export citing documents from Scopus and Web of Science. Follow the steps on the Data Collection and Data Cleaning webpages to prepare the citing documents for analysis (excluding adding document types and editing author names). Ensure the number of de-duplicated documents equals the number of total citations reported. After the data has been prepared, create a duplicate copy of the file and delete self-citations.
+In the "Exports" folder, create a subfolder titled "Citing Documents" that includes subfolders titled “Citing Original” and “Citing Working."
+
+Export Scopus data in a CSV format. Export citation information, bibliographical information, abstract & keywords, funding details, and other information. Save the file with a standard naming convention: last name/department-scopus-citing-original (e.g., smith-scopus-citing-original; marketing-scopus-citing-original). Save the original export in the “Citing Original” subfolder, and then add a copy to the “Citing Working” folder and update the file name (e.g., smith-scopus-citing-working; marketing-scopus-citing-working).
+
+Export Web of Science data in a BibTeX format. Export the full record and cited references. Save the file with a standard naming convention: last name/department-isi-citing-original (e.g., smith-isi-citing-original.csv; marketing-isi-citing-original.csv). Save the original export in the “Citing Original” subfolder, and then add a copy to the “Citing Working” folder and update the file name (e.g., smith-isi-citing-working; marketing-isi-citing-working).
+
+Use the following script to convert the original Web of Science (bibtex) file into a csv. Update the file paths for `C:/path/to/your/wos_file.bib` and `C:/path/to/your/wos_converted.csv`. Save a copy to the “Citing Working” folder and update the file name (e.g., smith-isi-citing-working; marketing-isi-citing-working).
+
+```r
+library(bibliometrix)
+wos_file <- "C:/path/to/your/wos_file.bib" # update path name
+W <- convert2df(wos_file,
+                dbsource = "wos",
+                format = "bibtex")
+write.csv(W,
+          "C:/path/to/your/wos_converted.csv", # update path name
+          row.names = FALSE)
+```
+
+In the Scopus working csv files, update the column names to the following:
+
+- Authors = AU
+- Title = TI
+- Source Title = SO
+- Cited by = TC
+- Year = PY
+- DOI = DI
+- Affiliations = affiliations
+
+Then, add the column “DB” to the Scopus and Web of Science working files and note the database name (i.e., Scopus, ISI). Retain only the following columns in the working files: DB, DI, TI, SO, PY, AU, TC, and affiliations.
+
+Repeat the steps outlined on the [Clean Data in OpenRefine webpage](https://vvlooking.github.io/research-impact/data-cleaning-openrefine.html) to combine and clean the full citing documents dataset.
+
+Create a working copy of the file exported from OpenRefine and use a standard naming convention (e.g., smith-combined-citing-deduplicated; marketing-combined-citing-deduplicated). Save the file in the “Citing Working” subfolder. Then, delete duplicate documents, retaining the record from the database with the most comprehensive indexing, by sorting first by the DOI and then the title. Ensure the number of de-duplicated documents equals the number of total citations reported. After the data has been prepared, create a duplicate copy of the file, titled "last-name/department-citing-noselfcitations.xlsx" and delete self-citations.
+
+Using the "last-name/department-citing-noselfcitations.xlsx" file, standardize institutions by following the directions on the [Update Institution Crosswalk webpage](["last-name/department-citing-noselfcitations.xlsx"](https://vvlooking.github.io/research-impact/data-cleaning-crosswalk.html).
