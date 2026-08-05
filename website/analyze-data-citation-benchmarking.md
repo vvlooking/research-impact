@@ -309,3 +309,162 @@ institution_counts <- institution_counts |>
     rank = row_number()
   )
 ```
+
+Identify the top collaborating institutions and export the results by adding the following script:
+
+```r
+# Identify top 15 intitutions
+
+top_15_institutions <- institution_counts |>
+  slice_head(n = 15)
+
+print(top_15_institutions)
+
+# Summary
+
+summary_table <- tibble(
+  measure = c(
+    "Publications in input file",
+    "Publications with at least one matched institution",
+    "Unique institutions",
+    "Institution-publication combinations"
+  ),
+  value = c(
+    nrow(publications),
+    n_distinct(publication_institutions$publication_row_id),
+    number_unique_institutions,
+    nrow(publication_institutions)
+  )
+)  # Closes tibble()
+
+# Export results
+
+write_xlsx(
+  list(
+    Summary = summary_table,
+    `Top 15 Institutions` = top_15_institutions,
+    `All Institution Counts` = institution_counts
+  ),
+  output_file
+)
+
+message("Results written to: ", output_file)
+```
+
+## Identify Top Countries of Citing Documents
+
+Calculate the number of unique citing countries across publications by adding the following script:
+
+```r
+# Validate the country column
+if (!"country_code" %in% names(institutions)) {
+  stop(
+    "institutions.csv does not contain a column named ",
+    "'country_code'."
+  )
+}
+
+# Add institution metadata to publication-institution pairs
+publication_institution_details <- publication_institutions |>
+  left_join(
+    institutions |>
+      select(
+        institution_id,
+        country_code
+      ),
+    by = "institution_id"
+  )
+
+# Create one row per publication and country
+publication_countries <- publication_institution_details |>
+  filter(
+    !is.na(country_code),
+    country_code != ""
+  ) |>
+  distinct(
+    publication_row_id,
+    country_code
+  )
+
+# Count unique countries
+number_unique_countries <- publication_countries |>
+  summarise(
+    unique_countries = n_distinct(country_code)
+  ) |>
+  pull(unique_countries)
+
+message(
+  "Number of unique countries: ",
+  number_unique_countries
+)
+
+# Count publications per country
+country_counts <- publication_countries |>
+  count(
+    country_code,
+    name = "unique_publications",
+    sort = TRUE
+  ) |>
+  mutate(
+    rank = row_number()
+  ) |>
+  select(
+    rank,
+    country_code,
+    unique_publications
+  )
+
+print(country_counts)
+```
+
+Identify the top citing countries by adding the following script:
+
+```r
+# Select top 15 countries
+top_15_countries <- country_counts |>
+  slice_head(n = 15)
+
+print(top_15_countries)
+
+# Summary
+country_summary_table <- tibble(
+  measure = c(
+    "Publications in input file",
+    "Publications with at least one identified country",
+    "Unique countries",
+    "Publication-country combinations"
+  ),
+  value = c(
+    nrow(publications),
+    n_distinct(publication_countries$publication_row_id),
+    number_unique_countries,
+    nrow(publication_countries)
+  )
+)
+
+# Update Excel file
+
+write_xlsx(
+  list(
+    Summary = country_summary_table,
+
+    `Top 15 Institutions` =
+      top_15_institutions,
+
+    `All Institution Counts` =
+      institution_counts,
+
+    `Country Summary` =
+      country_summary_table,
+
+    `Top 15 Countries` =
+      top_15_countries,
+
+    `All Country Counts` =
+      country_counts
+  ),
+  output_file
+)
+
+message("Results written to: ", output_file)
+```
