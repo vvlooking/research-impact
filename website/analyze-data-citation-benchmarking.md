@@ -468,3 +468,109 @@ write_xlsx(
 
 message("Results written to: ", output_file)
 ```
+
+## Identify Top Journals of Citing Documents
+
+Identify the journals citing documents are mostly published in by running the following script. Update the file paths for input_file.xlsx, and path_to_journal-counts.xlsx (this will be a new file, “journal counts”, that will be exported into the Outputs/ folder).
+
+```r
+# Load libraries
+library(readxl)
+library(dplyr)
+library(stringr)
+library(writexl)
+
+# Load files
+input_file <- "input_file.xlsx" # Update path to standardized citing Excel file
+output_file <- "path_to_journal-counts.xlsx" # Update path to output folder
+
+# Import Excel file
+publications <- read_excel(input_file) |>
+  mutate(publication_row_id = row_number())
+
+# Confirm that SO_key exists
+if (!"SO_key" %in% names(publications)) {
+  stop(
+    "The input workbook does not contain a column named ",
+    "'SO_key'."
+  )
+}
+
+# Clean journal names
+publication_journals <- publications |>
+  select(
+    publication_row_id,
+    SO_key
+  ) |>
+  mutate(
+    journal = str_squish(SO_key)
+  ) |>
+  filter(
+    !is.na(journal),
+    journal != ""
+  ) |>
+  distinct(
+    publication_row_id,
+    journal
+  )
+
+# Count unique journals
+number_unique_journals <- publication_journals |>
+  summarise(
+    unique_journals = n_distinct(journal)
+  ) |>
+  pull(unique_journals)
+
+message(
+  "Number of unique journals: ",
+  number_unique_journals
+)
+
+# Count publications per journal
+journal_counts <- publication_journals |>
+  count(
+    journal,
+    name = "unique_publications",
+    sort = TRUE
+  ) |>
+  mutate(
+    rank = row_number()
+  ) |>
+  select(
+    rank,
+    journal,
+    unique_publications
+  )
+
+# Select top 15 journals
+top_15_journals <- journal_counts |>
+  slice_head(n = 15)
+
+print(top_15_journals)
+
+# Summary
+journal_summary_table <- tibble(
+  measure = c(
+    "Publications in input file",
+    "Publications with journal data",
+    "Unique journals"
+  ),
+  value = c(
+    nrow(publications),
+    n_distinct(publication_journals$publication_row_id),
+    number_unique_journals
+  )
+)
+
+# Export results
+write_xlsx(
+  list(
+    `Journal Summary` = journal_summary_table,
+    `Top 15 Journals` = top_15_journals,
+    `All Journal Counts` = journal_counts
+  ),
+  output_file
+)
+
+message("Results written to: ", output_file)
+```
