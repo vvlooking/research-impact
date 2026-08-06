@@ -3,7 +3,7 @@
 ## Checklist
 
 - [ ] Export journal metrics from Journal Citation Reports and Scopus
-- [ ] Calculate the number of unique journals
+- [ ] Calculate the number of unique journals and then identify the most common journals
 - [ ] Identify journals in the top 10% of their category by JIF percentile
 - [ ] Calculate the number and percentage of documents in journals by quartile (using a pivot table in Excel)
 
@@ -63,4 +63,14 @@ message(
   "Number of unique journals: ",
   number_unique_journals
 )
+```
+
+Then, to identify which journals the researcher/group publishes in most often, add the following to the end of the script:
+
+```r
+# Select top 15 journals
+top_15_journals <- journal_counts |>
+  slice_head(n = 15)
+
+print(top_15_journals)
 ```
