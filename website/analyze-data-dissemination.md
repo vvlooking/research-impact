@@ -3,6 +3,7 @@
 ## Checklist
 
 - [ ] Export journal metrics from Journal Citation Reports and Scopus
+- [ ] Add journal metrics to standardized dataset
 - [ ] Calculate the number of unique journals and then identify the most common journals
 - [ ] Identify journals in the top 10% of their category by JIF percentile
 - [ ] Calculate the number and percentage of documents in journals by quartile (using a pivot table in Excel)
@@ -721,6 +722,10 @@ from google.colab import files
 files.download("scopus_journal_metrics_2025.csv")
 files.download("scopus_journal_metrics_diagnostics.csv")
 ```
+
+## Add Journal Metrics to Standardized Dataset
+
+Add the journal metrics from both Journal Citation Reports and Scopus to the standardized dataset, ensuring metrics are included for each journal article (journal metrics will likely be duplicated throughout the file).
 
 ## Calculate the Number of Unique Journals
 
