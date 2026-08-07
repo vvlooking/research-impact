@@ -100,14 +100,18 @@ OUTPUT_COLUMNS = [
 
 def normalize_issn(value):
     """
-    Remove spaces, hyphens, and other punctuation from an ISSN.
+    Remove spaces, hyphens, and punctuation from an ISSN.
     """
-    return re.sub(r"[^0-9Xx]", "", str(value)).upper()
+    return re.sub(
+        r"[^0-9Xx]",
+        "",
+        str(value),
+    ).upper()
 
 
 def local_name(tag):
     """
-    Remove an XML namespace from a tag.
+    Remove the namespace from an XML tag.
     """
     return tag.rsplit("}", 1)[-1]
 
@@ -120,6 +124,7 @@ def element_text(element):
         return None
 
     value = element.text.strip()
+
     return value if value else None
 
 
@@ -127,7 +132,13 @@ def descendants_by_name(parent, names):
     """
     Find XML descendants matching one or more tag names.
     """
-    wanted = {name.lower() for name in names}
+    if parent is None:
+        return []
+
+    wanted = {
+        name.lower()
+        for name in names
+    }
 
     return [
         element
@@ -140,9 +151,6 @@ def first_text(parent, names):
     """
     Return the first nonempty value matching any candidate tag.
     """
-    if parent is None:
-        return None
-
     for element in descendants_by_name(parent, names):
         value = element_text(element)
 
@@ -154,18 +162,23 @@ def first_text(parent, names):
 
 def get_year(element):
     """
-    Find a year stored as an XML attribute or child element.
+    Find a year stored as an attribute or child element.
     """
     if element is None:
         return None
 
+    # Look for a year attribute.
     for attribute_name, attribute_value in element.attrib.items():
         if local_name(attribute_name).lower() == "year":
-            match = re.search(r"\d{4}", str(attribute_value))
+            match = re.search(
+                r"\d{4}",
+                str(attribute_value),
+            )
 
             if match:
                 return int(match.group())
 
+    # Look for a year child element.
     for child in element:
         child_name = local_name(child.tag).lower()
 
@@ -178,7 +191,10 @@ def get_year(element):
             value = element_text(child)
 
             if value:
-                match = re.search(r"\d{4}", value)
+                match = re.search(
+                    r"\d{4}",
+                    value,
+                )
 
                 if match:
                     return int(match.group())
@@ -188,7 +204,7 @@ def get_year(element):
 
 def choose_year_container(entry, target_year):
     """
-    Find the detailed CiteScore block for the selected year.
+    Find the detailed CiteScore block for TARGET_YEAR.
     """
     candidates = descendants_by_name(
         entry,
@@ -212,39 +228,56 @@ def latest_year_value(
     target_year,
 ):
     """
-    Extract SNIP or SJR for TARGET_YEAR.
+    Get SNIP or SJR for TARGET_YEAR.
 
-    If TARGET_YEAR is unavailable, return the newest available
+    If TARGET_YEAR is not available, return the newest available
     value and its actual year.
     """
-    containers = descendants_by_name(entry, list_names)
-    search_root = containers[0] if containers else entry
+    containers = descendants_by_name(
+        entry,
+        list_names,
+    )
 
-    values = descendants_by_name(search_root, value_names)
-    parsed = []
+    search_root = (
+        containers[0]
+        if containers
+        else entry
+    )
 
-    for element in values:
+    elements = descendants_by_name(
+        search_root,
+        value_names,
+    )
+
+    parsed_values = []
+
+    for element in elements:
         value = element_text(element)
         year = get_year(element)
 
         if value is not None:
-            parsed.append((year, value))
+            parsed_values.append(
+                (year, value)
+            )
 
-    if not parsed:
+    if not parsed_values:
         return None, None
 
     exact_matches = [
         item
-        for item in parsed
+        for item in parsed_values
         if item[0] == target_year
     ]
 
     if exact_matches:
-        return exact_matches[-1][1], exact_matches[-1][0]
+        return (
+            exact_matches[-1][1],
+            exact_matches[-1][0],
+        )
 
     dated_values = [
         item
-        for item in parsed
+        for item in parsed_values
         if item[0] is not None
     ]
 
@@ -256,19 +289,19 @@ def latest_year_value(
 
         return newest[1], newest[0]
 
-    return parsed[-1][1], None
+    return parsed_values[-1][1], None
 
 
 def extract_percentile(year_block):
     """
-    Return the journal's highest CiteScore subject percentile.
+    Return the highest CiteScore subject percentile.
     """
     if year_block is None:
         return None
 
     values = []
 
-    percentile_elements = descendants_by_name(
+    elements = descendants_by_name(
         year_block,
         [
             "percentile",
@@ -277,7 +310,7 @@ def extract_percentile(year_block):
         ],
     )
 
-    for element in percentile_elements:
+    for element in elements:
         value = element_text(element)
 
         if value is None:
@@ -309,7 +342,7 @@ def extract_percent_cited(year_block):
     if year_block is None:
         return None
 
-    # First, look for an explicit percent-cited field.
+    # Use an explicit percent-cited value when available.
     value = first_text(
         year_block,
         [
@@ -324,10 +357,11 @@ def extract_percent_cited(year_block):
             return float(
                 value.replace("%", "").strip()
             )
+
         except ValueError:
             return value
 
-    # Some responses provide the percentage of uncited documents.
+    # Some responses provide percent uncited instead.
     uncited = first_text(
         year_block,
         [
@@ -342,10 +376,11 @@ def extract_percent_cited(year_block):
             return 100.0 - float(
                 uncited.replace("%", "").strip()
             )
+
         except ValueError:
             pass
 
-    # Final fallback: derive the percentage from cited documents.
+    # Try calculating the percentage from cited documents.
     cited_documents = first_text(
         year_block,
         [
@@ -383,7 +418,7 @@ def extract_percent_cited(year_block):
 
 def find_entry(root):
     """
-    Locate the journal entry in the API response.
+    Find the journal entry in the Scopus response.
     """
     for element in root.iter():
         if local_name(element.tag).lower() == "entry":
@@ -394,7 +429,7 @@ def find_entry(root):
 
 def make_session():
     """
-    Create an HTTP session with retry and rate-limit handling.
+    Create an HTTP session with automatic retry handling.
     """
     retry_policy = Retry(
         total=5,
@@ -431,7 +466,7 @@ def make_session():
 
 def fetch_journal(session, original_issn):
     """
-    Retrieve and parse metrics for one ISSN.
+    Retrieve and parse journal metrics for one ISSN.
     """
     issn = normalize_issn(original_issn)
 
@@ -445,6 +480,7 @@ def fetch_journal(session, original_issn):
         "Normalized ISSN": issn,
         "Status": None,
         "Message": None,
+        "CiteScore year": None,
         "SNIP year": None,
         "SJR year": None,
     }
@@ -460,7 +496,7 @@ def fetch_journal(session, original_issn):
     response = session.get(
         API_URL.format(issn=issn),
 
-        # Your API key is authorized for STANDARD.
+        # Your API key supports the STANDARD view.
         params={"view": "STANDARD"},
 
         timeout=60,
@@ -470,6 +506,7 @@ def fetch_journal(session, original_issn):
 
     if response.status_code == 404:
         diagnostic["Message"] = "ISSN not found."
+
         return empty_result, diagnostic
 
     if response.status_code in (401, 403):
@@ -482,11 +519,14 @@ def fetch_journal(session, original_issn):
     response.raise_for_status()
 
     try:
-        root = ET.fromstring(response.content)
+        root = ET.fromstring(
+            response.content
+        )
 
     except ET.ParseError as error:
         diagnostic["Message"] = (
-            f"Could not parse the API response: {error}"
+            "Could not parse the API response: "
+            f"{error}"
         )
 
         return empty_result, diagnostic
@@ -500,11 +540,7 @@ def fetch_journal(session, original_issn):
 
         return empty_result, diagnostic
 
-    year_block = choose_year_container(
-        entry,
-        TARGET_YEAR,
-    )
-
+    # Journal information.
     title = first_text(
         entry,
         ["title"],
@@ -513,6 +549,27 @@ def fetch_journal(session, original_issn):
     publisher = first_text(
         entry,
         ["publisher"],
+    )
+
+    # Latest completed CiteScore and year.
+    current_metric = first_text(
+        entry,
+        ["citeScoreCurrentMetric"],
+    )
+
+    current_metric_year = first_text(
+        entry,
+        ["citeScoreCurrentMetricYear"],
+    )
+
+    diagnostic["CiteScore year"] = (
+        current_metric_year
+    )
+
+    # Look for detailed information for TARGET_YEAR.
+    year_block = choose_year_container(
+        entry,
+        TARGET_YEAR,
     )
 
     citescore = None
@@ -550,25 +607,20 @@ def fetch_journal(session, original_issn):
             ],
         )
 
-        percentile = extract_percentile(year_block)
-        percent_cited = extract_percent_cited(year_block)
-
-    # The latest completed CiteScore is sometimes located
-    # outside the detailed yearly block.
-    current_metric_year = first_text(
-        entry,
-        ["citeScoreCurrentMetricYear"],
-    )
-
-    if (
-        citescore is None
-        and str(current_metric_year) == str(TARGET_YEAR)
-    ):
-        citescore = first_text(
-            entry,
-            ["citeScoreCurrentMetric"],
+        percentile = extract_percentile(
+            year_block
         )
 
+        percent_cited = extract_percent_cited(
+            year_block
+        )
+
+    # The STANDARD response puts the completed CiteScore
+    # directly under citeScoreCurrentMetric.
+    if citescore is None:
+        citescore = current_metric
+
+    # Retrieve SNIP.
     snip, snip_year = latest_year_value(
         entry,
         ["SNIPList"],
@@ -576,6 +628,7 @@ def fetch_journal(session, original_issn):
         TARGET_YEAR,
     )
 
+    # Retrieve SJR.
     sjr, sjr_year = latest_year_value(
         entry,
         ["SJRList"],
@@ -588,8 +641,10 @@ def fetch_journal(session, original_issn):
 
     if year_block is None:
         diagnostic["Message"] = (
-            f"The STANDARD response did not include a "
-            f"detailed CiteScore block for {TARGET_YEAR}."
+            f"CiteScore {current_metric_year} was retrieved. "
+            "The STANDARD view did not include detailed "
+            "citation, document, percentile, or "
+            "percent-cited data."
         )
     else:
         diagnostic["Message"] = "OK"
