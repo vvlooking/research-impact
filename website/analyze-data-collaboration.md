@@ -10,14 +10,13 @@
 - [ ] Identify the top collaborating units at USC
 - [ ] Calculate the number of unique countries
 - [ ] Identify the top collaborating countries
-- [ ] Create a collaboration network visualization (countries) in VOSViewer
 - [ ] Calculate the number of unique states
 - [ ] Identify the top collaborating states
 - [ ] Create a collaboration network visualization (authors) in VOSViewer
 - [ ] Create a collaboration network visualization (USC) in VOSViewer
 - [ ] Create a collaboration network visualization (institutions) in VOSViewer
-- [ ] Create a collaboration network visualization (countries) in Tableau
-- [ ] Create a collaboration network visualization (states) in Tableau
+- [ ] Create a collaboration network visualization (countries) in Flourish (via Canva)
+- [ ] Create a collaboration network visualization (states) in Flourish (via Canva)
 
 
 ## Collaborating Authors
@@ -214,6 +213,8 @@ input_file <- "input_file.xlsx" # Update path to standardized Excel file
 institutions_file <- "path_to_institutions.csv" # Update path to institution crosswalk
 output_file <- "path_to_institution-counts.xlsx" # Update path to output folder
 
+home_institution_id <- "INST000001"
+
 # Import Excel file
 
 publications <- read_excel(input_file) |>
@@ -244,6 +245,7 @@ publication_institutions <- publications |>
   filter(
     !is.na(institution_id),
     institution_id != ""
+    institution_id != home_institution_id
   ) |>
   distinct(
     publication_row_id,
