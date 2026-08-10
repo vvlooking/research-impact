@@ -839,3 +839,36 @@ top_15_journals <- journal_counts |>
 
 print(top_15_journals)
 ```
+
+## Identify Journals in the Top 10% of Their Category by JIF Percentile
+
+Identify the top journals (by JIF percentile) by running the following script. Update the file path for `file_name` to the standardized Excel file.
+
+```r
+## Identify Journals in the Top 10% of Their Category by JIF Percentile
+
+# Load libraries
+library(dplyr)
+
+# Load Excel file
+df <- read_excel("file_name") # Add file path
+
+# Print list of journals in the top 10% of their category
+top10_journals <- df %>%
+  filter(!is.na(`JIF Percentile`)) %>%
+  filter(`JIF Percentile` >= 90) %>%
+  distinct(SO) %>%
+  arrange(SO)
+
+top10_journals
+print(top10_journals, n = Inf)
+
+# Print number of articles published in journals in the top 10% of their category
+top10_journals_counts <- df %>%
+  filter(!is.na(`JIF Percentile`)) %>%
+  filter(`JIF Percentile` >= 90) %>%
+  count(SO, sort = TRUE)
+
+top10_journals_counts
+print(top10_journals_counts, n = Inf)
+```
