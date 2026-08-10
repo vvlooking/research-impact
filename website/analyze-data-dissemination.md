@@ -7,9 +7,9 @@
 - [ ] Calculate the number of unique journals and then identify the most common journals
 - [ ] Identify journals in the top 10% of their category by JIF percentile
 - [ ] Calculate the number and percentage of documents in journals by quartile (using a pivot table in Excel)
-- [ ] Create figure: "Percentage of Documents Published in Journals by JIF Quartile" (using Excel or Canva)
+- [ ] Create figure: "Percentage of Documents Published in Journals by JIF Quartile" (using Flourish via Canva)
 - [ ] Calculate JCR categories (using a pivot table in Excel)
-- [ ] Create figure: "Articles by Journal Citation Reports (JCR) Category" (using Canva)
+- [ ] Create figure: "Articles by Journal Citation Reports (JCR) Category" (using Flourish via Canva)
 
 ## Export Journal Metrics from Journal Citation Reports and Scopus
 
