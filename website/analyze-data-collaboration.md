@@ -244,7 +244,7 @@ publication_institutions <- publications |>
   ) |>
   filter(
     !is.na(institution_id),
-    institution_id != ""
+    institution_id != "",
     institution_id != home_institution_id
   ) |>
   distinct(
