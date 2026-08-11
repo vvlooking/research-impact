@@ -1,8 +1,8 @@
-# Research Impact Reporting
-Add description/overview here.
+# Research Impact Reports
+This site provides instructions on preparing standard individual and group research impact reports. Standard research impact reports follow four main steps: (1) exporting the data, (2) cleaning the data, (3) analyzing the data, and (4) preparing the report and supplemental materials.
 
 ## Report Checklist
-Standard research impact reports follow four main steps: (1) exporting the data, (2) cleaning the data, (3) analyzing the data, and (4) preparing the report and supplemental materials. Use the following checklist to guide the reporting process. Instructions and scripts for each step are detailed in subsequent webpages.
+Use the following checklist to guide the reporting process. Instructions and scripts for each step are detailed in subsequent pages.
 
 - [ ] Export data
   - [ ] Scopus
@@ -19,7 +19,6 @@ Standard research impact reports follow four main steps: (1) exporting the data,
   - [ ] Productivity
   - [ ] Dissemination
   - [ ] Collaboration
-  - [ ] Topical expertise
 - [ ] Prepare report
   -  [ ] Narrative
   -  [ ] Appendix
