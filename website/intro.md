@@ -9,8 +9,8 @@ Use the following checklist to guide the reporting process. Instructions and scr
   - [ ] Web of Science
   - [ ] Dimensions 
 - [ ] Clean data
-  -  [ ] Convert Web of Science file to a csv
-  -  [ ] OpenRefine
+  -  [ ] Convert Web of Science export to a csv
+  -  [ ] Clean data in OpenRefine
   -  [ ] De-duplicate data
   -  [ ] Apply crosswalk
   -  [ ] Manually review and edit data
