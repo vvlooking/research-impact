@@ -41,7 +41,7 @@ value.toString().replace(",","").toNumber()
 ```
 
 ## Normalize Author Names
-Add a column based on the `AU` column and name it "AI_key". Select "Edit cells," then "Transform." Add the following script:
+Add a column based on the `AU` column and name it "AU_key". Select "Edit cells," then "Transform." Add the following script:
 ```r
 join(
   forEach(
