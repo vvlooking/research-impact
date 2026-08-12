@@ -28,7 +28,7 @@ Upload the cleaned de-duplicated Excel file into the "input/" subfolder. The Exc
 
 ## Create and Update "Standarize Affiliations" Script
 
-In RStudio, create the script `standardize_affiliations.R`. Then, update the following lines with the correct file paths: `path_to_deduplicated_dataset.xlsx`, `path_to_dated_institutions.csv`, `path_to_dated_institution_aliases.csv`, `path_to_unmatched_affiliations.csv`, and `path_to_deduplicated_dataset-standardized.xlsx`.
+In RStudio, create the script `standardize_affiliations.R`. Then, update the following lines with the correct file paths: `path_to_deduplicated_dataset.xlsx`, `path_to_dated_institutions.csv`, `path_to_dated_institution_aliases.csv`, `path_to_unmatched_affiliations.csv`, and `path_to_deduplicated_dataset-standardized.xlsx` (this will create a new file).
 
 ```r
 # Load libraries
