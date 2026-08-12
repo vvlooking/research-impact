@@ -42,7 +42,7 @@ from google.colab import files
 uploaded = files.upload()
 input_filename = next(iter(uploaded))
 
-input_df = pd.read_csv(
+input_df = pd.read_excel(
     input_filename,
     dtype=str,
 )
