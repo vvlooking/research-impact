@@ -817,7 +817,7 @@ publication_journals <- publications |>
     journal != ""
   )
 
-# Count unique journals
+# Count the number of unique journals
 number_unique_journals <- publication_journals |>
   summarise(
     unique_journals = n_distinct(journal)
@@ -828,6 +828,14 @@ message(
   "Number of unique journals: ",
   number_unique_journals
 )
+
+# Count publications in each journal
+journal_counts <- publication_journals |>
+  count(
+    journal,
+    name = "publication_count",
+    sort = TRUE
+  )
 ```
 
 Then, to identify which journals the researcher/group publishes in most often, add the following to the end of the script:
