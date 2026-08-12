@@ -19,6 +19,7 @@ Use the following checklist to guide the reporting process. Instructions and scr
   - [ ] Productivity
   - [ ] Dissemination
   - [ ] Collaboration
+  - [ ] Topical expertise
 - [ ] Prepare report
   -  [ ] Narrative
   -  [ ] Appendix
