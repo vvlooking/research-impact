@@ -50,6 +50,6 @@ In the Scopus and Dimensions working csv files, update the column names to the f
 - Abstract = AB
 
 In the Web of Science working csv file, update the column names to the following:
-- eISSN = WoS ISSN
+- eISSN = WoS_ISSN
   
 Then, add the column "DB" and note the database name (i.e., Scopus, Dimensions, ISI). Retain only the following columns in the Scopus, Web of Science, and Dimensions working files: DB, DI, TI, SO, AB, PY, DT, AU, TC, affiliations, KW_Merged (Web of Science only), Author Keywords (Scopus only), Index Keywords (Scopus only), Web of Science ISSN (Web of Science only), ISSN (Scopus only), RCR (Dimensions only), FCR (Dimensions only), and Fields of Research (Dimensions only).
