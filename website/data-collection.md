@@ -10,7 +10,7 @@
 - [ ] Standardize column names
 
 ## Create a Project Folder
-Create a folder for the project (e.g., Smith Report Fall 2025; Marketing Report Spring 2026). Create a subfolder titled "Exports," and then add subfolders titled "Original" and "Working" in the "Exports" folder.
+Create a folder for the project (e.g., Smith Report Fall 2025; Marketing Report Spring 2026). Create the two subfolders "Scripts" and "Figures". Next, create a subfolder titled "Exports," and then add subfolders titled "Original" and "Working" in the "Exports" folder. 
 
 ## Export Data from Scopus
 Export Scopus data in a CSV format. Export citation information, bibliographical information, abstract & keywords, funding details, and other information. Save the file with a standard naming convention: last name/department-scopus-original (e.g., smith-scopus-original; marketing-scopus-original). Save the original export in the "Original" subfolder, and then add a copy to the "Working" folder and update the file name (e.g., smith-scopus-working; marketing-scopus-working).
