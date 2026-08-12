@@ -5,18 +5,18 @@
 - [ ] Create a folder structure for the crosswalk
 - [ ] Create a dated copy of `institutions.csv` and `institution_aliases.csv`, and add them to the `data/` folder
 - [ ] Add the cleaned Excel file to the `input/` folder
-- [ ] Add `02_standardize_affiliations.R` to the `scripts/` subfolder and update the `input_file` and `output_file` paths
+- [ ] Add `standardize_affiliations.R` to the `scripts/` subfolder and update the `input_file` and `output_file` paths
 - [ ] Run the standardization script
 - [ ] Check the match-status summary
 - [ ] Open `unmatched_affiliations.csv`
 - [ ] Map new variants to existing institutions in the dated `institution_aliases.csv` file
 - [ ] Add new institutions, when necessary, to the dated `institutions.csv` file
-- [ ] Re-run `02_standardize_affiliations.R`
+- [ ] Re-run `standardize_affiliations.R`
 - [ ] Update master institutional crosswalk
 
 ## Create a Folder Structure
 
-Create a parent folder, "institution-crosswalk" and include the following sub-folders  it: data, input, output, review, scripts.
+Create a parent folder, "institution-crosswalk" and include the following sub-folders  it: data, input, output, and review.
 
 ## Create a Dated Copy of the Crosswalk Files
 
@@ -28,7 +28,7 @@ Upload the cleaned de-duplicated Excel file into the "input/" subfolder. The Exc
 
 ## Create and Update "Standarize Affiliations" Script
 
-In RStudio, create the script `02_standardize_affiliations.R`. Then, update the following lines with the correct file paths: `path_to_deduplicated_dataset.xlsx`, `path_to_dated_institutions.csv`, `path_to_dated_institution_aliases.csv`, `path_to_unmatched_affiliations.csv`, and `path_to_deduplicated_dataset-standardized.xlsx`.
+In RStudio, create the script `standardize_affiliations.R`. Then, update the following lines with the correct file paths: `path_to_deduplicated_dataset.xlsx`, `path_to_dated_institutions.csv`, `path_to_dated_institution_aliases.csv`, `path_to_unmatched_affiliations.csv`, and `path_to_deduplicated_dataset-standardized.xlsx`.
 
 ```r
 # Load libraries
