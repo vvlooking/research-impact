@@ -739,460 +739,298 @@ In Excel, click "Data," then "From Text/CSV." Load the txt file. Delete all the 
 
 In VOSViewer, click "Create," then "Create a Map Based on Bibliometric Data." Select "Read Data from Bibliographic Database Files," select Scopus, and upload the edited csv file. Select "Co-Authorship" as the type of analysis and "Organizations" as the unit of analysis. Upload the thesaurus file.
 
-## Create a Collaboration Network Visualization (Countries) in Tableau
+## Create a Collaboration Network Visualization (States) in Flourish (via Canva)
 
-Start by preparing the data in RStudio. If necessary, install the required packages:
-
-```r
-install.packages(
-  c(
-    "readxl",
-    "dplyr",
-    "tidyr",
-    "stringr",
-    "writexl",
-    "sf",
-    "rnaturalearth",
-    "countrycode"
-  )
-)
-```
-
-Then, add the following script, updating the file paths for `input_file` to the standardized dataset and `output_file` to the Working/ folder. For every publication, this script will identify its unique countries or states, remove repeated occurrences of the same location within that publication, create every unique pair of locations, and count how many publications contain that pair.
+Prepare the standardized citing Excel file for visualization by running the following script. Update the file path for input_file.
 
 ```r
-# Load libraries
 library(readxl)
+library(writexl)
 library(dplyr)
 library(tidyr)
 library(stringr)
-library(writexl)
-library(sf)
-library(rnaturalearth)
-library(countrycode)
+library(tibble)
 
-# 1. Set file paths
-
-input_file <- "path_to_standardized_file.xlsx" # Update file path to standardized dataset
-output_file <- "path_to_tableau-geographic-collaboration.xlsx" # Update file path to Working/ folder
-
-# Change this if the publication data are not on the first sheet
-input_sheet <- 1
-
-
-# 2. Column names
-
-country_column <- "country_code"
-state_column <- "state_code"
-
-
-# 3. Import publication data
+input_file <- "file_path_to_standardized_dataset" # Update file path
 
 publications <- read_excel(
   input_file,
-  sheet = input_sheet
+  sheet = "Publications"
 )
 
-# Add a publication identifier if one does not already exist
-if (!"publication_row_id" %in% names(publications)) {
-  publications <- publications |>
-    mutate(publication_row_id = row_number())
-}
-
-# Confirm that the required columns exist
-required_columns <- c(
-  "publication_row_id",
-  country_column,
-  state_column
-)
-
-missing_columns <- setdiff(
-  required_columns,
-  names(publications)
-)
-
-if (length(missing_columns) > 0) {
-  stop(
-    "The following required columns are missing: ",
-    paste(missing_columns, collapse = ", ")
-  )
-}
-
-# 4. Separate location codes
-
-separate_location_codes <- function(data, location_column) {
-
-  data |>
-    select(
-      publication_row_id,
-      location_codes = all_of(location_column)
-    ) |>
-    separate_longer_delim(
-      location_codes,
-      delim = ";"
-    ) |>
-    mutate(
-      location_code = location_codes |>
-        str_squish() |>
-        str_to_upper()
-    ) |>
-    filter(
-      !is.na(location_code),
-      location_code != "",
-      location_code != "NA"
-    ) |>
-    distinct(
-      publication_row_id,
-      location_code
-    ) |>
-    select(
-      publication_row_id,
-      location_code
-    )
-}
-
-
-# 5. Prepare country codes
-
-publication_countries <- separate_location_codes(
-  publications,
-  country_column
-)
-
-# Convert two-character country codes to ISO three-character codes.
-# Existing three-character codes remain unchanged.
-publication_countries <- publication_countries |>
-  mutate(
-    location_code = case_when(
-      str_length(location_code) == 2 ~
-        countrycode(
-          location_code,
-          origin = "iso2c",
-          destination = "iso3c",
-          warn = TRUE
-        ),
-
-      TRUE ~ location_code
-    )
-  ) |>
-  filter(
-    !is.na(location_code),
-    location_code != ""
-  ) |>
-  distinct(
-    publication_row_id,
-    location_code
-  )
-
-
-# 6. Create country coordinate lookup 
-
-world_boundaries <- ne_countries(
-  scale = "small",
-  returnclass = "sf"
-) |>
-  filter(
-    iso_a3 != "-99",
-    name_long != "Antarctica"
-  )
-
-# Transform before identifying a representative point
-country_points <- world_boundaries |>
-  st_transform(6933) |>
-  st_point_on_surface() |>
-  st_transform(4326)
-
-country_coordinates <- st_coordinates(country_points)
-
-country_lookup <- country_points |>
-  st_drop_geometry() |>
-  transmute(
-    location_code = str_to_upper(iso_a3),
-    location_name = name_long,
-    latitude = country_coordinates[, 2],
-    longitude = country_coordinates[, 1]
-  ) |>
-  distinct(
-    location_code,
-    .keep_all = TRUE
-  )
-
-
-# 7. Create a U.S. coordinate lookup
-
-state_lookup <- tibble(
-  location_code = state.abb,
-  location_name = state.name,
-  latitude = state.center$y,
-  longitude = state.center$x
-) |>
-  bind_rows(
-    tibble(
-      location_code = c(
-        "DC",
-        "PR",
-        "VI",
-        "GU",
-        "AS",
-        "MP"
-      ),
-      location_name = c(
-        "District of Columbia",
-        "Puerto Rico",
-        "U.S. Virgin Islands",
-        "Guam",
-        "American Samoa",
-        "Northern Mariana Islands"
-      ),
-      latitude = c(
-        38.9072,
-        18.2208,
-        18.3358,
-        13.4443,
-        -14.2710,
-        15.0979
-      ),
-      longitude = c(
-        -77.0369,
-        -66.5901,
-        -64.8963,
-        144.7937,
-        -170.1322,
-        145.6739
-      )
-    )
-  )
-
-
-# 8. Prepare state codes
-
-publication_states <- separate_location_codes(
-  publications,
-  state_column
-) |>
-  # Retain only codes found in the U.S. state lookup
-  semi_join(
-    state_lookup,
-    by = "location_code"
-  )
-
-
-# 9. Create map tables
-
-create_map_tables <- function(
-    publication_locations,
-    location_lookup
-) {
-
-  # Attach coordinates and names
-  located_publications <- publication_locations |>
-    inner_join(
-      location_lookup,
-      by = "location_code"
-    ) |>
-    distinct(
-      publication_row_id,
-      location_code,
-      .keep_all = TRUE
-    )
-
-  # Count unique publications involving each location
-  nodes <- located_publications |>
-    count(
-      location_code,
-      location_name,
-      latitude,
-      longitude,
-      name = "location_publications",
-      sort = TRUE
-    )
-
-  # Create every unordered pair of locations appearing
-  # on the same publication
-  links <- located_publications |>
-    select(
-      publication_row_id,
-      from = location_code
-    ) |>
-    inner_join(
-      located_publications |>
-        select(
-          publication_row_id,
-          to = location_code
-        ),
-      by = "publication_row_id",
-      relationship = "many-to-many"
-    ) |>
-    filter(from < to) |>
-    distinct(
-      publication_row_id,
-      from,
-      to
-    ) |>
-    count(
-      from,
-      to,
-      name = "collaborations",
-      sort = TRUE
-    )
-
-  # Add origin coordinates
-  links <- links |>
-    left_join(
-      location_lookup |>
-        transmute(
-          from = location_code,
-          from_name = location_name,
-          from_latitude = latitude,
-          from_longitude = longitude
-        ),
-      by = "from"
-    )
-
-  # Add destination coordinates
-  links <- links |>
-    left_join(
-      location_lookup |>
-        transmute(
-          to = location_code,
-          to_name = location_name,
-          to_latitude = latitude,
-          to_longitude = longitude
-        ),
-      by = "to"
-    ) |>
-    mutate(
-      path_id = str_c(from, to, sep = "__")
-    )
-
-  # Tableau needs two rows for each path:
-  # one for the origin and one for the destination.
-  map_data <- bind_rows(
-
-    links |>
-      transmute(
-        path_id,
-        path_order = 1L,
-        location_code = from,
-        location_name = from_name,
-        latitude = from_latitude,
-        longitude = from_longitude,
-        collaborations
-      ),
-
-    links |>
-      transmute(
-        path_id,
-        path_order = 2L,
-        location_code = to,
-        location_name = to_name,
-        latitude = to_latitude,
-        longitude = to_longitude,
-        collaborations
-      )
-
-  ) |>
-    left_join(
-      nodes |>
-        select(
-          location_code,
-          location_publications
-        ),
-      by = "location_code"
-    ) |>
-    arrange(
-      path_id,
-      path_order
-    )
-
-  list(
-    nodes = nodes,
-    links = links,
-    map_data = map_data
-  )
-}
-
-
-# 10. Create country tables
-
-country_results <- create_map_tables(
-  publication_countries,
-  country_lookup
-)
-
-
-# Identify country codes that did not receive coordinates
-unrecognized_countries <- publication_countries |>
-  distinct(location_code) |>
-  anti_join(
-    country_lookup,
-    by = "location_code"
-  )
-
-
-# 11. Create state tables
-
-state_results <- create_map_tables(
-  publication_states,
-  state_lookup
-)
-
-
-# Identify state codes that did not receive coordinates
-unrecognized_states <- separate_location_codes(
-  publications,
-  state_column
-) |>
-  distinct(location_code) |>
-  anti_join(
-    state_lookup,
-    by = "location_code"
-  )
-
-
-# 12. Create summary
-
-summary_table <- tibble(
-  measure = c(
-    "Publications in input file",
-    "Countries represented",
-    "Country collaboration links",
-    "States represented",
-    "State collaboration links"
-  ),
-  value = c(
-    nrow(publications),
-    nrow(country_results$nodes),
-    nrow(country_results$links),
-    nrow(state_results$nodes),
-    nrow(state_results$links)
-  )
-)
-
-
-# 13. Export Tableau workbook
-
-write_xlsx(
-  list(
-    Summary = summary_table,
-    Country_Map = country_results$map_data,
-    Country_Nodes = country_results$nodes,
-    Country_Links = country_results$links,
-    State_Map = state_results$map_data,
-    State_Nodes = state_results$nodes,
-    State_Links = state_results$links,
-    Unrecognized_Countries = unrecognized_countries,
-    Unrecognized_States = unrecognized_states
-  ),
-  output_file
-)
-
-message(
-  "Tableau workbook written to: ",
-  output_file
+institutions <- read_excel(
+  input_file,
+  sheet = "Publication Institutions"
 )
 ```
 
-Open the Excel file and inspect these sheets: Country_Map, Country_Nodes, Country_Links, State_Map, State_Nodes, State_Links, Unrecognized_Countries, Unrecognized_States. Both Uncrecognized sheets should be empty. If not, review the listed codes.
+Extract U.S. publication-state relationships:
 
-Next, Open Tableau Public.
+```r
+document_states <- institutions %>%
+  mutate(
+    country_code = str_to_lower(str_squish(country_code)),
+    state_code = str_to_upper(str_squish(state_code))
+  ) %>%
+
+  # Retain U.S. institutions only
+  filter(
+    str_detect(
+      country_code,
+      "(^|;)\\s*usa\\s*(;|$)"
+    )
+  ) %>%
+
+  select(
+    publication_row_id,
+    original_state_value = state_code
+  ) %>%
+
+  # Safety step for cells containing multiple states
+  separate_rows(
+    original_state_value,
+    sep = "\\s*;\\s*"
+  ) %>%
+
+  mutate(
+    original_state_value = str_to_upper(
+      str_squish(original_state_value)
+    )
+  ) %>%
+
+  filter(
+    !is.na(original_state_value),
+    original_state_value != ""
+  ) %>%
+
+  # Count each publication once per state
+  distinct(
+    publication_row_id,
+    original_state_value,
+    .keep_all = TRUE
+  )
+```
+
+Create a state-coordinate lookup:
+
+```r
+state_lookup <- tibble(
+  state_code = state.abb,
+  state_name = state.name,
+  latitude = state.center$y,
+  longitude = state.center$x,
+  region = as.character(state.region)
+)
+```
+
+Add Washington D.C. and common U.S. territories in case they occur in the data:
+
+```r
+additional_locations <- tribble(
+  ~state_code, ~state_name,               ~latitude, ~longitude, ~region,
+  "DC",        "District of Columbia",      38.9072,   -77.0369, "South",
+  "PR",        "Puerto Rico",               18.2208,   -66.5901, "Territory",
+  "VI",        "U.S. Virgin Islands",        18.3358,   -64.8963, "Territory",
+  "GU",        "Guam",                      13.4443,   144.7937, "Territory",
+  "AS",        "American Samoa",            -14.2710,  -170.1322, "Territory",
+  "MP",        "Northern Mariana Islands",   15.0979,   145.6739, "Territory"
+)
+
+state_lookup <- bind_rows(
+  state_lookup,
+  additional_locations
+)
+
+# Examine the lookup
+
+View(state_lookup)
+```
+
+Attach state information:
+
+```r
+unmatched_states <- document_states %>%
+  filter(is.na(state_name)) %>%
+  count(original_state_value, sort = TRUE)
+
+unmatched_states
+```
+
+Check for state codes that did not match:
+
+```r
+unmatched_states <- document_states %>%
+  filter(is.na(state_name)) %>%
+  count(original_state_value, sort = TRUE)
+
+unmatched_states
+```
+
+Add publication details:
+
+```r
+publication_metadata <- publications %>%
+  select(
+    publication_row_id,
+    source,
+    title = TI,
+    authors = AU,
+    year = PY,
+    journal = SO,
+    doi = DI
+  )
+
+document_states <- document_states %>%
+  left_join(
+    publication_metadata,
+    by = "publication_row_id"
+  ) %>%
+  transmute(
+    publication_row_id,
+    source,
+    title,
+    authors,
+    year,
+    journal,
+    doi,
+    original_state_value,
+    state_code = original_state_value,
+    state_name,
+    latitude,
+    longitude,
+    region
+  ) %>%
+  arrange(
+    state_name,
+    publication_row_id
+  )
+```
+
+Review the state counts:
+
+```r
+state_counts <- document_states %>%
+  filter(!is.na(state_name)) %>%
+  group_by(
+    state_code,
+    state_name,
+    region
+  ) %>%
+  summarise(
+    citing_document_count = n_distinct(publication_row_id),
+    .groups = "drop"
+  ) %>%
+  arrange(desc(citing_document_count))
+
+state_counts
+```
+
+Next, create the Flourish arcs sheet:
+
+```r
+flourish_state_arcs <- state_counts %>%
+  mutate(
+    source_code = paste0("US_", state_code),
+    destination_code = "USC",
+
+    popup_text = paste0(
+      state_name,
+      ": ",
+      citing_document_count,
+      " citing document",
+      if_else(citing_document_count == 1, "", "s")
+    )
+  ) %>%
+  select(
+    source_code,
+    destination_code,
+    citing_document_count,
+    region,
+    popup_text
+  )
+
+flourish_state_arcs
+```
+
+Next, create the Locations sheet:
+
+```r
+flourish_state_locations <- state_counts %>%
+  left_join(
+    state_lookup,
+    by = c("state_code", "state_name", "region")
+  ) %>%
+  transmute(
+    code = paste0("US_", state_code),
+    location_name = state_name,
+    latitude,
+    longitude,
+    region
+  ) %>%
+
+  # Add the destination
+  bind_rows(
+    tibble(
+      code = "USC",
+      location_name = "University of South Carolina, Columbia",
+      latitude = 33.9971,
+      longitude = -81.0274,
+      region = "Destination"
+    )
+  ) %>%
+  arrange(location_name)
+
+flourish_state_locations
+
+# validate the location codes
+
+codes_used_in_arcs <- unique(c(
+  flourish_state_arcs$source_code,
+  flourish_state_arcs$destination_code
+))
+
+missing_location_codes <- setdiff(
+  codes_used_in_arcs,
+  flourish_state_locations$code
+)
+
+missing_location_codes
+
+# check for missing coordinates
+
+flourish_state_locations %>%
+  filter(is.na(latitude) | is.na(longitude))
+```
+
+Export the prepared file, updating the file path for `output_file`:
+
+```r
+output_file <- "file_path.xlsx" # Update file path
+
+write_xlsx(
+  list(
+    "Flourish State Arcs" = flourish_state_arcs,
+    "Locations" = flourish_state_locations,
+    "Document States" = document_states,
+    "State Counts" = state_counts
+  ),
+  path = output_file
+)
+
+message("Created: ", output_file)
+```
+
+After the file has been prepared, log into Flourish through Canva. Choose the template, “Connection Map (under “Arc Maps”). Upload Flourish Arcs into the main Data sheet and select:
+
+- Source location: `source code`
+- Destination location: `destination_code`
+- Value: `citing_document_count`
+- Category: `region`
+- Info for popups: `popup_text`
+
+In the Flourish Locations datasheet, upload the Excel `Locations` sheet and select:
+
+- Code: `code`
+- Name: `location_name`
+- Latitude: `latitude`
+- Longitude: `longitude`
