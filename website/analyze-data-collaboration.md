@@ -1011,7 +1011,7 @@ flourish_state_locations %>%
 Export the prepared file, updating the file path for `output_file`:
 
 ```r
-output_file <- "file_path.xlsx" # Update file path
+output_file <- "file_path_to_collaborating_states.xlsx" # Update file path
 
 write_xlsx(
   list(
@@ -1035,6 +1035,304 @@ After the file has been prepared, log into Flourish through Canva. Choose the te
 - Info for popups: `popup_text`
 
 In the Flourish Locations datasheet, upload the Excel `Locations` sheet and select:
+
+- Code: `code`
+- Name: `location_name`
+- Latitude: `latitude`
+- Longitude: `longitude`
+
+## Create a Collaboration Network (Countries) in Flourish (via Canva)
+
+Prepare the standardized Excel file for visualization by running the following script. Update the file path for `input_file`.
+
+```r
+# Install packages
+
+install.packages(c(
+  "readxl",
+  "writexl",
+  "dplyr",
+  "tidyr",
+  "stringr",
+  "tibble"
+))
+
+# Load libraries
+
+library(readxl)
+library(writexl)
+library(dplyr)
+library(tidyr)
+library(stringr)
+library(tibble)
+
+# Import file
+
+input_file <- ("file_path.xlsx") # Update file path
+
+publications <- read_excel(
+  input_file,
+  sheet = "Publications"
+)
+
+institutions <- read_excel(
+  input_file,
+  sheet = "Publication Institutions"
+)
+
+quality_control <- read_excel(
+  input_file,
+  sheet = "Quality Control"
+)
+```
+
+Then, clean and separate the countries by adding the following script:
+
+```r
+
+document_countries <- institutions %>%
+  select(
+    publication_row_id,
+    original_country_value = country_code
+  ) %>%
+
+  # A safety step in case any cell still contains semicolons
+  separate_rows(
+    original_country_value,
+    sep = "\\s*;\\s*"
+  ) %>%
+
+  mutate(
+    original_country_value = str_squish(
+      str_to_lower(original_country_value)
+    ),
+
+    # Clean known errors and non-country values
+    country_key = case_when(
+      original_country_value == "switerzland" ~ "switzerland",
+      original_country_value == "amsterdam"   ~ "netherlands",
+      TRUE ~ original_country_value
+    )
+  ) %>%
+
+  filter(
+    !is.na(country_key),
+    country_key != ""
+  ) %>%
+
+  # Count a publication only once per country
+  distinct(
+    publication_row_id,
+    country_key,
+    .keep_all = TRUE
+  )
+```
+
+Create the coordinate lookup:
+
+```r
+country_lookup <- tribble(
+  ~country_key,       ~source_code, ~country,          ~latitude, ~longitude, ~region,
+  "australia",        "AUS",        "Australia",        -25.2744,  133.7751,  "Oceania",
+  "austria",          "AUT",        "Austria",           47.5162,   14.5501,  "Europe",
+  "canada",           "CAN",        "Canada",            56.1304, -106.3468,  "North America",
+  "china",            "CHN",        "China",             35.8617,  104.1954,  "Asia",
+  "czech republic",   "CZE",        "Czech Republic",    49.8175,   15.4730,  "Europe",
+  "denmark",          "DNK",        "Denmark",           56.2639,    9.5018,  "Europe",
+  "egypt",            "EGY",        "Egypt",             26.8206,   30.8025,  "Africa",
+  "england",          "ENG",        "England",           52.3555,   -1.1743,  "Europe",
+  "finland",          "FIN",        "Finland",           61.9241,   25.7482,  "Europe",
+  "france",           "FRA",        "France",            46.2276,    2.2137,  "Europe",
+  "germany",          "DEU",        "Germany",           51.1657,   10.4515,  "Europe",
+  "greece",           "GRC",        "Greece",            39.0742,   21.8243,  "Europe",
+  "hong kong",        "HKG",        "Hong Kong",         22.3193,  114.1694,  "Asia",
+  "india",            "IND",        "India",             20.5937,   78.9629,  "Asia",
+  "ireland",          "IRL",        "Ireland",           53.1424,   -7.6921,  "Europe",
+  "italy",            "ITA",        "Italy",             41.8719,   12.5674,  "Europe",
+  "japan",            "JPN",        "Japan",             36.2048,  138.2529,  "Asia",
+  "lithuania",        "LTU",        "Lithuania",         55.1694,   23.8813,  "Europe",
+  "netherlands",      "NLD",        "Netherlands",       52.1326,    5.2913,  "Europe",
+  "new zealand",      "NZL",        "New Zealand",      -40.9006,  174.8860,  "Oceania",
+  "norway",           "NOR",        "Norway",            60.4720,    8.4689,  "Europe",
+  "pakistan",         "PAK",        "Pakistan",          30.3753,   69.3451,  "Asia",
+  "philippines",      "PHL",        "Philippines",       12.8797,  121.7740,  "Asia",
+  "qatar",            "QAT",        "Qatar",             25.3548,   51.1839,  "Asia",
+  "scotland",         "SCT",        "Scotland",          56.4907,   -4.2026,  "Europe",
+  "south africa",     "ZAF",        "South Africa",     -30.5595,   22.9375,  "Africa",
+  "south korea",      "KOR",        "South Korea",       35.9078,  127.7669,  "Asia",
+  "spain",            "ESP",        "Spain",             40.4637,   -3.7492,  "Europe",
+  "sweden",           "SWE",        "Sweden",            60.1282,   18.6435,  "Europe",
+  "switzerland",      "CHE",        "Switzerland",       46.8182,    8.2275,  "Europe",
+  "thailand",         "THA",        "Thailand",          15.8700,  100.9925,  "Asia",
+  "tunisia",          "TUN",        "Tunisia",           33.8869,    9.5375,  "Africa",
+  "usa",              "USA",        "United States",     39.8283,  -98.5795,  "North America"
+)
+```
+
+Then, join the countries to the publication details:
+
+```r
+publication_metadata <- publications %>%
+  select(
+    publication_row_id,
+    source,
+    title = TI,
+    authors = AU,
+    year = PY,
+    journal = SO,
+    doi = DI
+  )
+
+document_countries <- document_countries %>%
+  left_join(
+    country_lookup,
+    by = "country_key"
+  ) %>%
+  left_join(
+    publication_metadata,
+    by = "publication_row_id"
+  ) %>%
+  select(
+    publication_row_id,
+    source,
+    title,
+    authors,
+    year,
+    journal,
+    doi,
+    original_country_value,
+    country,
+    source_code,
+    latitude,
+    longitude,
+    region
+  )
+```
+
+Check for unmatched country values:
+
+```r
+unmatched_countries <- document_countries %>%
+  filter(is.na(source_code)) %>%
+  distinct(original_country_value) %>%
+  arrange(original_country_value)
+
+unmatched_countries
+```
+
+Create the arcs sheet for Flourish, with one weighted arc per country:
+
+```r
+flourish_arcs <- document_countries %>%
+  filter(!is.na(source_code)) %>%
+  group_by(
+    source_code,
+    country,
+    region
+  ) %>%
+  summarise(
+    citing_document_count = n_distinct(publication_row_id),
+    .groups = "drop"
+  ) %>%
+  mutate(
+    destination_code = "USC",
+
+    popup_text = paste0(
+      country,
+      ": ",
+      citing_document_count,
+      " citing document",
+      if_else(citing_document_count == 1, "", "s")
+    )
+  ) %>%
+  select(
+    source_code,
+    destination_code,
+    citing_document_count,
+    region,
+    popup_text
+  ) %>%
+  arrange(
+    desc(citing_document_count),
+    source_code
+  )
+
+flourish_arcs
+```
+
+Then, create the locations sheet for Flourish:
+
+```r
+flourish_locations <- document_countries %>%
+  filter(!is.na(source_code)) %>%
+  distinct(
+    code = source_code,
+    location_name = country,
+    latitude,
+    longitude,
+    region
+  ) %>%
+
+  # Add the destination
+  bind_rows(
+    tibble(
+      code = "USC",
+      location_name = "University of South Carolina, Columbia",
+      latitude = 33.9971,
+      longitude = -81.0274,
+      region = "Destination"
+    )
+  ) %>%
+  arrange(location_name)
+
+flourish_locations
+```
+
+Next, verify that all arc codes have coordinates. The script below should return "character(0)".
+
+```r
+arc_codes <- unique(c(
+  flourish_arcs$source_code,
+  flourish_arcs$destination_code
+))
+
+missing_location_codes <- setdiff(
+  arc_codes,
+  flourish_locations$code
+)
+
+missing_location_codes
+```
+
+Finally, export the Excel file. Update the file path to `path_to_collaborating_countries.xlsx`.
+
+```r
+output_file <- ("path_to_flourish_countries.xlsx")
+
+write_xlsx(
+  list(
+    "Flourish Arcs" = flourish_arcs,
+    "Locations" = flourish_locations,
+    "Document Countries" = document_countries,
+    "Publications" = publications,
+    "Publication Institutions" = institutions,
+    "Quality Control" = quality_control
+  ),
+  path = output_file
+)
+
+message("Created: ", output_file)
+```
+
+After the file has been prepared, log into Flourish through Canva. Choose the template, "Connection Map (under "Arc Maps"). Upload `Flourish Arcs` into the main Data sheet and select:
+
+- Source location: `source_code`
+- Destination location: `destination_code`
+- Value: `citing_document_count`
+- Category: `region`
+- Info for popups: `popup_text`
+
+Then, upload `Locations` into Flourish's Locations sheet and select:
 
 - Code: `code`
 - Name: `location_name`
