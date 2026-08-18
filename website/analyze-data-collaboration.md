@@ -833,7 +833,7 @@ state_lookup <- tibble(
 )
 ```
 
-Add Washington D.C. and common U.S. territories in case they occur in the data:
+Add Washington D.C. and common U.S. territories in case they occur in the data and attach state information:
 
 ```r
 additional_locations <- tribble(
@@ -851,19 +851,15 @@ state_lookup <- bind_rows(
   additional_locations
 )
 
+document_states <- document_states %>%
+  left_join(
+    state_lookup,
+    by = c("original_state_value" = "state_code")
+  )
+
 # Examine the lookup
 
 View(state_lookup)
-```
-
-Attach state information:
-
-```r
-unmatched_states <- document_states %>%
-  filter(is.na(state_name)) %>%
-  count(original_state_value, sort = TRUE)
-
-unmatched_states
 ```
 
 Check for state codes that did not match:
