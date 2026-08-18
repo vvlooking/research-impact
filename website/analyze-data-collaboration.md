@@ -15,9 +15,8 @@
 - [ ] Create a collaboration network visualization (authors) in VOSViewer
 - [ ] Create a collaboration network visualization (USC) in VOSViewer
 - [ ] Create a collaboration network visualization (institutions) in VOSViewer
-- [ ] Create a collaboration network visualization (countries) in Flourish (via Canva)
 - [ ] Create a collaboration network visualization (states) in Flourish (via Canva)
-
+- [ ] Create a collaboration network visualization (countries) in Flourish (via Canva)
 
 ## Collaborating Authors
 
