@@ -497,7 +497,7 @@ library(tibble)
 
 # Import file
 
-input_file <- ()
+input_file <- ("file_path.xlsx") # Update file path
 
 publications <- read_excel(
   input_file,
