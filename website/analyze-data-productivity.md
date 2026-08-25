@@ -62,7 +62,7 @@ M <- publications |>
   transmute(
     AU = AU_key |>
       str_replace_all("\\s*;\\s*", ";") |>
-      str_to_upper(),
+      str_trim(),
 
     SO = as.character(SO),
     PY = as.numeric(PY),
