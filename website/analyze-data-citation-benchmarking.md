@@ -193,7 +193,7 @@ Using the "last-name/department-citing-noselfcitations.xlsx" file, standardize i
 
 ## Identify Top Affiliations of Citing Documents
 
-Calculate the number of unique citing institutions by running the following script. Update the file paths for input_file.xlsx, path_to_institutions.csv, and path_to_institution-counts.xlsx (this will be a new file, “institution counts”, that will be exported into the Outputs/ folder).
+Calculate the number of unique citing institutions by running the following script. Update the file paths for `input_file.xlsx`, `path_to_institutions.csv`, and `path_to_institution-counts.xlsx` (this will be a new file, “institution counts”, that will be exported into the Outputs/ folder).
 
 ```r
 # Load libraries
