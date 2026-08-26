@@ -770,7 +770,7 @@ Then, upload `Locations` into Flourish's Locations sheet and select:
 
 ## Identify Top Journals of Citing Documents
 
-Identify the journals citing documents are mostly published in by running the following script. Update the file paths for input_file.xlsx, and path_to_journal-counts.xlsx (this will be a new file, “journal counts”, that will be exported into the Outputs/ folder).
+Identify the journals citing documents are mostly published in by running the following script. Update the file paths for `input_file.xlsx`, and `path_to_journal-counts.xlsx` (this will be a new file, “journal counts”, that will be exported into the Outputs/ folder).
 
 ```r
 # Load libraries
