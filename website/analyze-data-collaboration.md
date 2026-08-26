@@ -295,8 +295,15 @@ institution_counts <- institution_counts |>
       ),
     by = "institution_id"
   ) |>
+  arrange(
+    desc(unique_publications),
+    canonical_name
+  ) |>
+  mutate(
+    rank = row_number()
+  ) |>
   select(
-    rank = unique_publications,
+    rank,
     institution_id,
     canonical_name,
     unique_publications,
@@ -305,13 +312,6 @@ institution_counts <- institution_counts |>
     country_code,
     ipeds_unitid,
     ror_id
-  ) |>
-  arrange(
-    desc(unique_publications),
-    canonical_name
-  ) |>
-  mutate(
-    rank = row_number()
   )
 ```
 
