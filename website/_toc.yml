@@ -17,3 +17,5 @@ chapters:
       - file: analyze-data-dissemination
       - file: analyze-data-collaboration
       - file: analyze-data-citation-benchmarking
+
+    - file: resources
