@@ -271,3 +271,120 @@ standardized_publications |>
 ```
 
 Open `unmatched_affiliations.csv` in the `review/` subfolder and examine the results. Add each new institution to `institutions.csv` and add the observed name to `institution_aliases.csv` and add the alias as approved. Re-run the script again as necessary.
+
+
+
+## Identify Publication Share in the Top 5% and 25% of Journals by CiteScore
+
+```r
+# Calculate publication shares in the top 5% and top 25% of journals by CiteScore.
+
+# Select the Scopus journal-metrics CSV when prompted.
+input_file <- "file_path" # Add file here
+
+# Thresholds based on the Scopus "Highest percentile" field.
+top_5_threshold <- 95
+top_25_threshold <- 75
+
+# Read identifiers and headers exactly as supplied.
+publications <- read.csv(
+  input_file,
+  stringsAsFactors = FALSE,
+  check.names = FALSE,
+  fileEncoding = "UTF-8-BOM"
+)
+
+percentile_column <- "Highest percentile"
+
+if (!percentile_column %in% names(publications)) {
+  stop(
+    paste0(
+      "The file does not contain a column named '", percentile_column,
+      "'. Columns found: ", paste(names(publications), collapse = ", ")
+    )
+  )
+}
+
+# Convert values such as "95" or "95%" to numbers.
+percentile_text <- trimws(as.character(publications[[percentile_column]]))
+percentile_text[percentile_text == ""] <- NA_character_
+highest_percentile <- suppressWarnings(
+  as.numeric(gsub("%", "", percentile_text, fixed = TRUE))
+)
+
+# Values outside the valid percentile range are treated as missing.
+invalid_range <- !is.na(highest_percentile) &
+  (highest_percentile < 0 | highest_percentile > 100)
+highest_percentile[invalid_range] <- NA_real_
+
+publications[[percentile_column]] <- highest_percentile
+
+# Missing percentiles do not qualify, but their publication rows remain in the denominator. This preserves the publication-share interpretation.
+publications$Top_5_percent_by_CiteScore <-
+  !is.na(highest_percentile) & highest_percentile >= top_5_threshold
+
+publications$Top_25_percent_by_CiteScore <-
+  !is.na(highest_percentile) & highest_percentile >= top_25_threshold
+
+publications$CiteScore_percentile_group <- ifelse(
+  is.na(highest_percentile),
+  "Missing percentile",
+  ifelse(
+    highest_percentile >= top_5_threshold,
+    "Top 5%",
+    ifelse(highest_percentile >= top_25_threshold, "Top 25% (not top 5%)", "Below top 25%")
+  )
+)
+
+total_publications <- nrow(publications)
+publications_with_percentile <- sum(!is.na(highest_percentile))
+top_5_publications <- sum(publications$Top_5_percent_by_CiteScore)
+top_25_publications <- sum(publications$Top_25_percent_by_CiteScore)
+
+if (total_publications == 0) {
+  stop("The input file contains no publication rows.")
+}
+
+summary_results <- data.frame(
+  Metric = c(
+    "Publication share in the Top 5% of Journals by CiteScore",
+    "Publication share in the Top 25% of Journals by CiteScore"
+  ),
+  Qualifying_publications = c(top_5_publications, top_25_publications),
+  Total_publications = total_publications,
+  Publication_share = c(
+    top_5_publications / total_publications,
+    top_25_publications / total_publications
+  ),
+  Publication_share_percent = c(
+    sprintf("%.1f%%", 100 * top_5_publications / total_publications),
+    sprintf("%.1f%%", 100 * top_25_publications / total_publications)
+  ),
+  stringsAsFactors = FALSE
+)
+
+# Save outputs next to the source CSV.
+input_directory <- dirname(normalizePath(input_file))
+input_stem <- tools::file_path_sans_ext(basename(input_file))
+classified_file <- file.path(
+  input_directory,
+  paste0(input_stem, "_with_citescore_groups.csv")
+)
+summary_file <- file.path(
+  input_directory,
+  paste0(input_stem, "_citescore_publication_shares.csv")
+)
+
+write.csv(publications, classified_file, row.names = FALSE, na = "")
+write.csv(summary_results, summary_file, row.names = FALSE, na = "")
+
+cat("\nCiteScore journal publication shares\n")
+cat("------------------------------------\n")
+cat("Total publication rows:", total_publications, "\n")
+cat("Rows with a usable percentile:", publications_with_percentile, "\n")
+cat("Rows with a missing/invalid percentile:",
+    total_publications - publications_with_percentile, "\n\n")
+print(summary_results, row.names = FALSE)
+cat("\nClassified publications saved to:\n", classified_file, "\n", sep = "")
+cat("\nSummary saved to:\n", summary_file, "\n", sep = "")
+```
