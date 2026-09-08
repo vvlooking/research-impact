@@ -18,765 +18,287 @@ In Journal Citation Reports, click "Journals." Filter by ISSN and paste in all I
 In Google Colab, open the Secrets panel using the key icon on the left. Create a secret named SCOPUS_API_KEY. Put the Scopus API key in the Value field and enable Notebook access. Then, run the following script:
 
 ```r
-from google.colab import userdata
-
-API_KEY = userdata.get("SCOPUS_API_KEY") 
-
-if not API_KEY:
-    raise ValueError(
-        "SCOPUS_API_KEY was not found. Add it under Colab → Secrets."
-    )
-
-    API_KEY = API_KEY.strip()
-print("API key loaded successfully.")
-```
-
-Import the file exported from Journal Citations Reports. Update the `TARGET_YEAR` as necessary.
-
-```r
-## Upload ISSNs
+import getpass
+import json
+import math
+import re
+import time
+from pathlib import Path
 
 import pandas as pd
-from google.colab import files
-
-uploaded = files.upload()
-input_filename = next(iter(uploaded))
-
-input_df = pd.read_excel(
-    input_filename,
-    dtype=str,
-)
-
-# Clean column names in case the CSV contains extra spaces.
-input_df.columns = input_df.columns.str.strip()
-
-if "ISSN" not in input_df.columns:
-    raise ValueError(
-        "The uploaded CSV must contain a column named ISSN. "
-        f"Columns found: {input_df.columns.tolist()}"
-    )
-
-ISSNS = (
-    input_df["ISSN"]
-    .dropna()
-    .astype(str)
-    .str.strip()
-)
-
-# Remove blank cells.
-ISSNS = ISSNS[ISSNS != ""].tolist()
-
-TARGET_YEAR = 2025 # update year as needed
-
-print(f"Loaded {len(ISSNS)} ISSNs.")
-print("First five:", ISSNS[:5])
-```
-
-Run the request:
-
-```r
-import re
 import requests
-import xml.etree.ElementTree as ET
 
-from requests.adapters import HTTPAdapter
-from urllib3.util.retry import Retry
+try:
+    from google.colab import files
+    IN_COLAB = True
+except ImportError:
+    IN_COLAB = False
+
+if IN_COLAB:
+    uploaded = files.upload()
+    if not uploaded:
+        raise RuntimeError("No CSV was uploaded.")
+    input_path = next(iter(uploaded))
+else:
+    # When testing locally, replace this with the path to your CSV.
+    input_path = "Sample ISSNs.csv"
+
+input_df = pd.read_csv(input_path, dtype=str, keep_default_na=False)
+issn_columns = [c for c in input_df.columns if c.strip().lower() == "issn"]
+if not issn_columns:
+    raise ValueError(f"No ISSN column found. Columns present: {list(input_df.columns)}")
+ISSN_COLUMN = issn_columns[0]
 
 
-API_URL = "https://api.elsevier.com/content/serial/title/issn/{issn}"
+# Enter credentials and configure the request
+API_KEY = getpass.getpass("Elsevier/Scopus API key (hidden): ").strip()
+if not API_KEY:
+    raise ValueError("An API key is required.")
 
-OUTPUT_COLUMNS = [
-    "Source title",
-    "CiteScore",
-    "Highest percentile",
-    "2022-25 Citations",
-    "2022-25 Documents",
-    "% Cited",
-    "SNIP",
-    "SJR",
-    "Publisher",
-]
+# Usually only the API key is needed. If Elsevier supplied an institutional token,
+# paste it when prompted; otherwise press Enter.
+INST_TOKEN = getpass.getpass("Institution token (optional; press Enter to skip): ").strip()
+
+OUTPUT_FILE = "scopus_journal_metrics.csv"
+REQUEST_TIMEOUT_SECONDS = 45
+MAX_RETRIES = 5
+PAUSE_BETWEEN_UNIQUE_ISSNS = 0.15
 
 
 def normalize_issn(value):
-    """
-    Remove spaces, hyphens, and punctuation from an ISSN.
-    """
-    return re.sub(
-        r"[^0-9Xx]",
-        "",
-        str(value),
-    ).upper()
+    """Return an eight-character ISSN without its display hyphen."""
+    text = re.sub(r"[^0-9Xx]", "", str(value or "")).upper()
+    return text if re.fullmatch(r"[0-9]{7}[0-9X]", text) else ""
 
 
-def local_name(tag):
-    """
-    Remove the namespace from an XML tag.
-    """
-    return tag.rsplit("}", 1)[-1]
+def objects(value):
+    """Yield every nested dict/list node."""
+    yield value
+    if isinstance(value, dict):
+        for child in value.values():
+            yield from objects(child)
+    elif isinstance(value, list):
+        for child in value:
+            yield from objects(child)
 
 
-def element_text(element):
-    """
-    Return cleaned text from an XML element.
-    """
-    if element is None or element.text is None:
+def scalar(value):
+    """Unwrap common Elsevier JSON scalar representations."""
+    if isinstance(value, (str, int, float)) and not isinstance(value, bool):
+        return value
+    if isinstance(value, dict):
+        for key in ("$", "value", "_", "#text"):
+            if key in value:
+                return scalar(value[key])
+    return None
+
+
+def first_key(root, keys):
+    """Find the first scalar value for any key, case-insensitively."""
+    wanted = {k.lower() for k in keys}
+    for node in objects(root):
+        if isinstance(node, dict):
+            for key, value in node.items():
+                if key.lower() in wanted:
+                    result = scalar(value)
+                    if result not in (None, ""):
+                        return result
+    return None
+
+
+def number(value):
+    if value is None or value == "":
+        return None
+    try:
+        result = float(str(value).replace(",", "").replace("%", "").strip())
+        return int(result) if result.is_integer() else result
+    except (TypeError, ValueError):
         return None
 
-    value = element.text.strip()
 
-    return value if value else None
-
-
-def descendants_by_name(parent, names):
-    """
-    Find XML descendants matching one or more tag names.
-    """
-    if parent is None:
-        return []
-
-    wanted = {
-        name.lower()
-        for name in names
-    }
-
-    return [
-        element
-        for element in parent.iter()
-        if local_name(element.tag).lower() in wanted
-    ]
-
-
-def first_text(parent, names):
-    """
-    Return the first nonempty value matching any candidate tag.
-    """
-    for element in descendants_by_name(parent, names):
-        value = element_text(element)
-
-        if value is not None:
+def year_of(node):
+    if not isinstance(node, dict):
+        return None
+    for key in ("@year", "year", "metricYear", "citeScoreCurrentMetricYear"):
+        value = number(node.get(key))
+        if isinstance(value, int) and 1900 <= value <= 2100:
             return value
-
     return None
 
 
-def get_year(element):
-    """
-    Find a year stored as an attribute or child element.
-    """
-    if element is None:
-        return None
-
-    # Look for a year attribute.
-    for attribute_name, attribute_value in element.attrib.items():
-        if local_name(attribute_name).lower() == "year":
-            match = re.search(
-                r"\d{4}",
-                str(attribute_value),
-            )
-
-            if match:
-                return int(match.group())
-
-    # Look for a year child element.
-    for child in element:
-        child_name = local_name(child.tag).lower()
-
-        if child_name in {
-            "year",
-            "citescoreyear",
-            "metricyear",
-            "citescorecurrentmetricyear",
-        }:
-            value = element_text(child)
-
-            if value:
-                match = re.search(
-                    r"\d{4}",
-                    value,
-                )
-
-                if match:
-                    return int(match.group())
-
-    return None
+def latest_metric_node(root, required_keys):
+    """Choose the newest dict containing at least one requested field."""
+    wanted = {k.lower() for k in required_keys}
+    candidates = []
+    for node in objects(root):
+        if not isinstance(node, dict):
+            continue
+        node_keys = {k.lower() for k in node}
+        if node_keys & wanted:
+            # In Elsevier responses, a metric's year may live on a parent object.
+            candidates.append((year_of(node) or -1, node))
+    return max(candidates, key=lambda pair: pair[0])[1] if candidates else {}
 
 
-def choose_year_container(entry, target_year):
-    """
-    Find the detailed CiteScore block for TARGET_YEAR.
-    """
-    candidates = descendants_by_name(
-        entry,
-        [
-            "citeScoreYearInfo",
-            "citescore-year-info",
-        ],
-    )
-
-    for candidate in candidates:
-        if get_year(candidate) == target_year:
-            return candidate
-
-    return None
-
-
-def latest_year_value(
-    entry,
-    list_names,
-    value_names,
-    target_year,
-):
-    """
-    Get SNIP or SJR for TARGET_YEAR.
-
-    If TARGET_YEAR is not available, return the newest available
-    value and its actual year.
-    """
-    containers = descendants_by_name(
-        entry,
-        list_names,
-    )
-
-    search_root = (
-        containers[0]
-        if containers
-        else entry
-    )
-
-    elements = descendants_by_name(
-        search_root,
-        value_names,
-    )
-
-    parsed_values = []
-
-    for element in elements:
-        value = element_text(element)
-        year = get_year(element)
-
-        if value is not None:
-            parsed_values.append(
-                (year, value)
-            )
-
-    if not parsed_values:
-        return None, None
-
-    exact_matches = [
-        item
-        for item in parsed_values
-        if item[0] == target_year
-    ]
-
-    if exact_matches:
-        return (
-            exact_matches[-1][1],
-            exact_matches[-1][0],
-        )
-
-    dated_values = [
-        item
-        for item in parsed_values
-        if item[0] is not None
-    ]
-
-    if dated_values:
-        newest = max(
-            dated_values,
-            key=lambda item: item[0],
-        )
-
-        return newest[1], newest[0]
-
-    return parsed_values[-1][1], None
-
-
-def extract_percentile(year_block):
-    """
-    Return the highest CiteScore subject percentile.
-    """
-    if year_block is None:
-        return None
-
+def highest_percentile(root):
     values = []
-
-    elements = descendants_by_name(
-        year_block,
-        [
-            "percentile",
-            "citeScorePercentile",
-            "citescore-percentile",
-        ],
-    )
-
-    for element in elements:
-        value = element_text(element)
-
-        if value is None:
-            value = (
-                element.attrib.get("percentile")
-                or element.attrib.get("value")
-            )
-
-        if value is not None:
-            try:
-                numeric_value = float(
-                    str(value)
-                    .replace("%", "")
-                    .strip()
-                )
-
-                values.append(numeric_value)
-
-            except ValueError:
-                pass
-
+    for node in objects(root):
+        if isinstance(node, dict):
+            for key, value in node.items():
+                if key.lower() in {"percentile", "highestpercentile"}:
+                    parsed = number(scalar(value))
+                    if parsed is not None and 0 <= parsed <= 100:
+                        values.append(parsed)
     return max(values) if values else None
 
 
-def extract_percent_cited(year_block):
-    """
-    Extract or calculate the percentage of documents cited.
-    """
-    if year_block is None:
-        return None
+def metric_for_latest_year(root, container_names, value_names):
+    """Extract the newest SNIP/SJR value, preferring a named container."""
+    named = []
+    containers = {name.lower() for name in container_names}
+    values = {name.lower() for name in value_names}
+    for node in objects(root):
+        if not isinstance(node, dict):
+            continue
+        if any(k.lower() in containers for k in node):
+            for subnode in objects(node):
+                if isinstance(subnode, dict):
+                    for key, value in subnode.items():
+                        if key.lower() in values:
+                            parsed = number(scalar(value))
+                            if parsed is not None:
+                                named.append((year_of(subnode) or -1, parsed))
+    if named:
+        return max(named, key=lambda pair: pair[0])[1]
+    return number(first_key(root, value_names))
 
-    # Use an explicit percent-cited value when available.
-    value = first_text(
-        year_block,
-        [
-            "percentCited",
-            "percent-cited",
-            "citeScorePercentCited",
-        ],
-    )
 
-    if value is not None:
+session = requests.Session()
+session.headers.update({
+    "Accept": "application/json",
+    "X-ELS-APIKey": API_KEY,
+    "X-ELS-ResourceVersion": "new",
+    "User-Agent": "Colab-Scopus-Serial-Metrics/1.0",
+})
+if INST_TOKEN:
+    session.headers["X-ELS-Insttoken"] = INST_TOKEN
+
+
+def request_serial_title(issn):
+    url = f"https://api.elsevier.com/content/serial/title/issn/{issn}"
+    params = {"view": "CITESCORE", "httpAccept": "application/json"}
+    last_error = "Request failed"
+    for attempt in range(MAX_RETRIES):
         try:
-            return float(
-                value.replace("%", "").strip()
-            )
+            response = session.get(url, params=params, timeout=REQUEST_TIMEOUT_SECONDS)
+        except requests.RequestException as exc:
+            last_error = f"Network error: {exc}"
+            if attempt == MAX_RETRIES - 1:
+                raise RuntimeError(last_error) from exc
+            time.sleep(2 ** attempt)
+            continue
 
-        except ValueError:
-            return value
+        if response.status_code == 200:
+            return response.json()
+        if response.status_code == 404:
+            raise LookupError("ISSN not found")
+        if response.status_code in (429, 500, 502, 503, 504):
+            retry_after = response.headers.get("Retry-After")
+            delay = float(retry_after) if retry_after and retry_after.isdigit() else 2 ** attempt
+            last_error = f"HTTP {response.status_code}: {response.text[:300]}"
+            if attempt < MAX_RETRIES - 1:
+                time.sleep(delay)
+                continue
+        raise RuntimeError(f"HTTP {response.status_code}: {response.text[:500]}")
+    raise RuntimeError(last_error)
 
-    # Some responses provide percent uncited instead.
-    uncited = first_text(
-        year_block,
-        [
-            "zeroCitesPercentSCE",
-            "zeroCitesPercent",
-            "percentUncited",
-        ],
+
+def extract_metrics(payload, input_issn):
+    entries = first_key(payload, ["entry"])
+    # first_key intentionally returns scalars; locate the actual entry object here.
+    entry = None
+    for node in objects(payload):
+        if isinstance(node, dict) and "entry" in node:
+            raw = node["entry"]
+            entry = raw[0] if isinstance(raw, list) and raw else raw
+            if isinstance(entry, dict):
+                break
+    if not isinstance(entry, dict):
+        entry = payload
+
+    calculation = latest_metric_node(
+        entry,
+        ["citationCount", "citationsCount", "documentCount", "documentsCount", "percentCited"],
     )
+    metric_year = year_of(calculation)
+    if metric_year is None:
+        metric_year = number(first_key(entry, ["citeScoreCurrentMetricYear", "metricYear"]))
 
-    if uncited is not None:
+    return {
+        "Input ISSN": input_issn,
+        "Source title": first_key(entry, ["dc:title", "source-title", "sourceTitle", "title"]),
+        "CiteScore": number(first_key(entry, ["citeScoreCurrentMetric", "citeScore", "citescore"])),
+        "Highest percentile": highest_percentile(entry),
+        "2022-25 Citations": number(first_key(calculation, ["citationCount", "citationsCount"])),
+        "2022-25 Documents": number(first_key(calculation, ["documentCount", "documentsCount"])),
+        "% Cited": number(first_key(calculation, ["percentCited", "percentageCited"])),
+        "SNIP": metric_for_latest_year(entry, ["SNIPList", "SNIP"], ["SNIP", "snip"]),
+        "SJR": metric_for_latest_year(entry, ["SJRList", "SJR"], ["SJR", "sjr"]),
+        "Publisher": first_key(entry, ["dc:publisher", "publisher", "publisher-name"]),
+        "Metric year": metric_year,
+        "Status": "OK",
+        "Error": "",
+    }
+
+
+# Retrieve metrics, save the CSV, and download it
+cache = {}
+results = []
+
+for row_number, raw_issn in enumerate(input_df[ISSN_COLUMN], start=2):
+    display_issn = str(raw_issn).strip()
+    issn = normalize_issn(display_issn)
+    if not issn:
+        results.append({
+            "Input ISSN": display_issn,
+            "Status": "INVALID_ISSN",
+            "Error": f"Row {row_number}: expected eight ISSN characters",
+        })
+        continue
+
+    if issn not in cache:
         try:
-            return 100.0 - float(
-                uncited.replace("%", "").strip()
-            )
-
-        except ValueError:
-            pass
-
-    # Try calculating the percentage from cited documents.
-    cited_documents = first_text(
-        year_block,
-        [
-            "citedDocumentCount",
-            "citedDocuments",
-            "citeCountSCE",
-        ],
-    )
-
-    total_documents = first_text(
-        year_block,
-        [
-            "documentCount",
-            "documents",
-            "publicationCount",
-        ],
-    )
-
-    try:
-        cited_documents = float(cited_documents)
-        total_documents = float(total_documents)
-
-        if total_documents > 0:
-            return (
-                100.0
-                * cited_documents
-                / total_documents
-            )
-
-    except (TypeError, ValueError):
-        pass
-
-    return None
-
-
-def find_entry(root):
-    """
-    Find the journal entry in the Scopus response.
-    """
-    for element in root.iter():
-        if local_name(element.tag).lower() == "entry":
-            return element
-
-    return None
-
-
-def make_session():
-    """
-    Create an HTTP session with automatic retry handling.
-    """
-    retry_policy = Retry(
-        total=5,
-        connect=5,
-        read=5,
-        status=5,
-        backoff_factor=1.5,
-        status_forcelist=[
-            429,
-            500,
-            502,
-            503,
-            504,
-        ],
-        allowed_methods=["GET"],
-        respect_retry_after_header=True,
-    )
-
-    session = requests.Session()
-
-    session.mount(
-        "https://",
-        HTTPAdapter(max_retries=retry_policy),
-    )
-
-    session.headers.update({
-        "X-ELS-APIKey": API_KEY,
-        "Accept": "application/xml",
-        "User-Agent": "Colab-Scopus-Journal-Metrics/1.0",
-    })
-
-    return session
-
-
-def fetch_journal(session, original_issn):
-    """
-    Retrieve and parse journal metrics for one ISSN.
-    """
-    issn = normalize_issn(original_issn)
-
-    empty_result = {
-        column: None
-        for column in OUTPUT_COLUMNS
-    }
-
-    diagnostic = {
-        "Input ISSN": original_issn,
-        "Normalized ISSN": issn,
-        "Status": None,
-        "Message": None,
-        "CiteScore year": None,
-        "SNIP year": None,
-        "SJR year": None,
-    }
-
-    if len(issn) != 8:
-        diagnostic["Status"] = "Invalid ISSN"
-        diagnostic["Message"] = (
-            "An ISSN must contain eight characters."
-        )
-
-        return empty_result, diagnostic
-
-    response = session.get(
-        API_URL.format(issn=issn),
-
-        # Your API key supports the STANDARD view.
-        params={"view": "STANDARD"},
-
-        timeout=60,
-    )
-
-    diagnostic["Status"] = response.status_code
-
-    if response.status_code == 404:
-        diagnostic["Message"] = "ISSN not found."
-
-        return empty_result, diagnostic
-
-    if response.status_code in (401, 403):
-        raise RuntimeError(
-            "Scopus authentication or entitlement error "
-            f"({response.status_code}) for ISSN {issn}: "
-            f"{response.text[:1000]}"
-        )
-
-    response.raise_for_status()
-
-    try:
-        root = ET.fromstring(
-            response.content
-        )
-
-    except ET.ParseError as error:
-        diagnostic["Message"] = (
-            "Could not parse the API response: "
-            f"{error}"
-        )
-
-        return empty_result, diagnostic
-
-    entry = find_entry(root)
-
-    if entry is None:
-        diagnostic["Message"] = (
-            "The API returned no journal entry."
-        )
-
-        return empty_result, diagnostic
-
-    # Journal information.
-    title = first_text(
-        entry,
-        ["title"],
-    )
-
-    publisher = first_text(
-        entry,
-        ["publisher"],
-    )
-
-    # Latest completed CiteScore and year.
-    current_metric = first_text(
-        entry,
-        ["citeScoreCurrentMetric"],
-    )
-
-    current_metric_year = first_text(
-        entry,
-        ["citeScoreCurrentMetricYear"],
-    )
-
-    diagnostic["CiteScore year"] = (
-        current_metric_year
-    )
-
-    # Look for detailed information for TARGET_YEAR.
-    year_block = choose_year_container(
-        entry,
-        TARGET_YEAR,
-    )
-
-    citescore = None
-    citations = None
-    documents = None
-    percentile = None
-    percent_cited = None
-
-    if year_block is not None:
-        citescore = first_text(
-            year_block,
-            [
-                "citeScore",
-                "citeScoreValue",
-                "citeScoreCurrentMetric",
-            ],
-        )
-
-        citations = first_text(
-            year_block,
-            [
-                "citationCount",
-                "citations",
-                "citeCount",
-                "citeCountSCE",
-            ],
-        )
-
-        documents = first_text(
-            year_block,
-            [
-                "documentCount",
-                "documents",
-                "publicationCount",
-            ],
-        )
-
-        percentile = extract_percentile(
-            year_block
-        )
-
-        percent_cited = extract_percent_cited(
-            year_block
-        )
-
-    # The STANDARD response puts the completed CiteScore
-    # directly under citeScoreCurrentMetric.
-    if citescore is None:
-        citescore = current_metric
-
-    # Retrieve SNIP.
-    snip, snip_year = latest_year_value(
-        entry,
-        ["SNIPList"],
-        ["SNIP"],
-        TARGET_YEAR,
-    )
-
-    # Retrieve SJR.
-    sjr, sjr_year = latest_year_value(
-        entry,
-        ["SJRList"],
-        ["SJR"],
-        TARGET_YEAR,
-    )
-
-    diagnostic["SNIP year"] = snip_year
-    diagnostic["SJR year"] = sjr_year
-
-    if year_block is None:
-        diagnostic["Message"] = (
-            f"CiteScore {current_metric_year} was retrieved. "
-            "The STANDARD view did not include detailed "
-            "citation, document, percentile, or "
-            "percent-cited data."
-        )
-    else:
-        diagnostic["Message"] = "OK"
-
-    result = {
-        "Source title": title,
-        "CiteScore": citescore,
-        "Highest percentile": percentile,
-        "2022-25 Citations": citations,
-        "2022-25 Documents": documents,
-        "% Cited": percent_cited,
-        "SNIP": snip,
-        "SJR": sjr,
-        "Publisher": publisher,
-    }
-
-    return result, diagnostic
-
-
-print("Step 3 loaded successfully.")
-```
-
-Test the first ISSN:
-
-```r
-# Test the first ISSN
-
-session = make_session()
-
-test_result, test_diagnostic = fetch_journal(
-    session,
-    ISSNS[0],
-)
-
-print("Result:")
-print(test_result)
-
-print("\nDiagnostic:")
-print(test_diagnostic)
-```
-
-Export the results:
-
-```r
-# Export the results
-
-import time
-import pandas as pd
-
-session = make_session()
-
-rows = []
-diagnostics = []
-
-for number, issn in enumerate(ISSNS, start=1):
-    print(f"[{number}/{len(ISSNS)}] Retrieving {issn}...")
-
-    try:
-        row, diagnostic = fetch_journal(
-            session,
-            issn,
-        )
-
-    except Exception as error:
-        row = {
-            column: None
-            for column in OUTPUT_COLUMNS
-        }
-
-        diagnostic = {
-            "Input ISSN": issn,
-            "Normalized ISSN": normalize_issn(issn),
-            "Status": "Error",
-            "Message": str(error),
-            "SNIP year": None,
-            "SJR year": None,
-        }
-
-    rows.append(row)
-    diagnostics.append(diagnostic)
-
-    time.sleep(0.25)
-
-metrics_df = pd.DataFrame(
-    rows,
-    columns=OUTPUT_COLUMNS,
-)
-
-diagnostics_df = pd.DataFrame(diagnostics)
-
-numeric_columns = [
-    "CiteScore",
-    "Highest percentile",
-    "2022-25 Citations",
-    "2022-25 Documents",
-    "% Cited",
-    "SNIP",
-    "SJR",
+            payload = request_serial_title(issn)
+            cache[issn] = extract_metrics(payload, display_issn)
+        except Exception as exc:
+            cache[issn] = {
+                "Input ISSN": display_issn,
+                "Status": "ERROR",
+                "Error": str(exc),
+            }
+        time.sleep(PAUSE_BETWEEN_UNIQUE_ISSNS)
+
+    result = cache[issn].copy()
+    result["Input ISSN"] = display_issn
+    results.append(result)
+    print(f"{len(results):>4}/{len(input_df)}  {display_issn}: {result.get('Status')}")
+
+output_columns = [
+    "Input ISSN", "Source title", "CiteScore", "Highest percentile",
+    "2022-25 Citations", "2022-25 Documents", "% Cited", "SNIP", "SJR",
+    "Publisher", "Metric year", "Status", "Error",
 ]
+output_df = pd.DataFrame(results).reindex(columns=output_columns)
+output_df.to_csv(OUTPUT_FILE, index=False, encoding="utf-8-sig")
 
-for column in numeric_columns:
-    metrics_df[column] = pd.to_numeric(
-        metrics_df[column],
-        errors="coerce",
-    )
+print(f"\nSaved {len(output_df)} rows to {OUTPUT_FILE}")
+print(output_df["Status"].value_counts(dropna=False).to_string())
+display(output_df.head(10)) if IN_COLAB else print(output_df.head(10).to_string(index=False))
 
-metrics_df.to_csv(
-    "scopus_journal_metrics_2025.csv",
-    index=False,
-    encoding="utf-8-sig",
-)
-
-diagnostics_df.to_csv(
-    "scopus_journal_metrics_diagnostics.csv",
-    index=False,
-    encoding="utf-8-sig",
-)
-
-display(metrics_df)
-display(diagnostics_df)
+if IN_COLAB:
+    files.download(OUTPUT_FILE)
 ```
 
-Finally, download the files:
-
-```r
-# Download the files
-
-from google.colab import files
-
-files.download("scopus_journal_metrics_2025.csv")
-files.download("scopus_journal_metrics_diagnostics.csv")
-```
 
 ## Add Journal Metrics to Standardized Dataset
 
