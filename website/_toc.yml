@@ -18,4 +18,4 @@ chapters:
       - file: analyze-data-collaboration
       - file: analyze-data-citation-benchmarking
 
-    - file: resources
+  - file: resources
