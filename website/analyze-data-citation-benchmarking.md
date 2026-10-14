@@ -25,7 +25,6 @@ library(readxl)
 df <- read_excel("file_name") # Update file path
 
 df <- df %>%
-  rename(TC = `TC...35`)
   
 summary(df$TC)
 
