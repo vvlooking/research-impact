@@ -564,6 +564,7 @@ country_lookup <- tribble(
   ~country_key,       ~source_code, ~country,          ~latitude, ~longitude, ~region,
   "australia",        "AUS",        "Australia",        -25.2744,  133.7751,  "Oceania",
   "austria",          "AUT",        "Austria",           47.5162,   14.5501,  "Europe",
+  "belgium",          "BEL",        "Belgium",           50.5039,    4.4699,  "Europe",
   "canada",           "CAN",        "Canada",            56.1304, -106.3468,  "North America",
   "china",            "CHN",        "China",             35.8617,  104.1954,  "Asia",
   "czech republic",   "CZE",        "Czech Republic",    49.8175,   15.4730,  "Europe",
@@ -594,6 +595,7 @@ country_lookup <- tribble(
   "switzerland",      "CHE",        "Switzerland",       46.8182,    8.2275,  "Europe",
   "thailand",         "THA",        "Thailand",          15.8700,  100.9925,  "Asia",
   "tunisia",          "TUN",        "Tunisia",           33.8869,    9.5375,  "Africa",
+  "united kingdom",   "GBR",        "United Kingdom",    55.3781,   -3.4360,  "Europe",
   "usa",              "USA",        "United States",     39.8283,  -98.5795,  "North America"
 )
 ```
