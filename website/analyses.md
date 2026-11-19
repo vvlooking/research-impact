@@ -179,7 +179,7 @@ cat("\nCampus example\n")
 show_test_entries(campus_sample, "Hayashi S., Brainlife.Io", "Hayashi|Martin D.|Renton A.I.")
 ```
 
-## Test a Boundary for Preprints Without a Year
+### Test a Boundary for Preprints Without a Year
 
 Create a new test function and print the three entries from the potential collaborators example.
 
@@ -1017,7 +1017,7 @@ head(
 )
 ```
 
-## Create the Shortlist for Potential New Collaborators
+### Create the Shortlist for Potential New Collaborators
 
 Create a shortlist that excludes previous co-authors.
 
@@ -1674,6 +1674,6 @@ cat("Saved to", normalizePath(export_dir, winslash = "/"), "\n")
 cat("Candidate links:", n_candidates, "\n")
 ```
 
-## Create a Visualization in VOSViewer
+### Create a Visualization in VOSViewer
 
 In VOSViewer, create a map based on network data. Upload `vanessa_kitzie_network.txt` as the network file and `vanessa_kitzie_map.txt` as the map file.
