@@ -408,8 +408,6 @@ print(top10_journals_counts, n = Inf)
 
 Identify the top journals (by CiteScore) by running the following script. Update the file path for `file_name` to the standardized Excel file.
 
-## Identify Publication Share in the Top 5% and 25% of Journals by CiteScore
-
 ```r
 # Calculate publication shares in the top 5% and top 25% of journals by CiteScore.
 
