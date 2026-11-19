@@ -1218,3 +1218,462 @@ for (i in seq_along(top_keys)) {
   )
 }
 ```
+
+### Rebuild the Collaborator Shortlist with the Corrected Scores
+
+Use the following script to rebuild the shortlist, excluding all cohort members and coauthors observed in the cohort export and keeping candidates with at least one paper pair that shares two or more references.
+
+```r
+# Link corrected paper scores to cohort members and eligible USC authors.
+clean_evidence <- merge(
+  merge(cohort_author_papers, paper_pairs, by = "cohort_eid"),
+  eligible_usc_author_papers,
+  by = "campus_eid"
+)
+
+# Exclude coauthors observed in the cohort export.
+observed_coauthor_keys <- with(
+  observed_coauthors, paste(researcher, author_id, sep = "\t")
+)
+
+clean_evidence <- clean_evidence[
+  !with(
+    clean_evidence,
+    paste(researcher, author_id, sep = "\t") %in% observed_coauthor_keys
+  ),
+]
+
+# Keep qualifying paper pairs and count them for each candidate.
+qualifying_pairs <- clean_evidence[
+  clean_evidence$shared_reference_count >= 2,
+]
+
+pair_support <- aggregate(
+  campus_eid ~ researcher + author_id,
+  data = qualifying_pairs,
+  FUN = length
+)
+names(pair_support)[3] <- "pairs_with_2plus_shared"
+
+# Select the highest-scoring qualifying pair for each candidate.
+qualifying_pairs <- qualifying_pairs[
+  order(
+    -qualifying_pairs$cosine_similarity,
+    -qualifying_pairs$shared_reference_count,
+    qualifying_pairs$cohort_eid,
+    qualifying_pairs$campus_eid
+  ),
+]
+
+best_clean_pairs <- qualifying_pairs[
+  !duplicated(qualifying_pairs[c("researcher", "author_id")]),
+]
+
+clean_shortlist <- merge(
+  best_clean_pairs,
+  pair_support,
+  by = c("researcher", "author_id")
+)
+
+clean_shortlist <- clean_shortlist[
+  order(
+    clean_shortlist$researcher,
+    -clean_shortlist$cosine_similarity,
+    -clean_shortlist$shared_reference_count,
+    clean_shortlist$author_id
+  ),
+]
+
+clean_shortlist$rank <- as.integer(ave(
+  seq_len(nrow(clean_shortlist)),
+  clean_shortlist$researcher,
+  FUN = seq_along
+))
+
+clean_shortlist$cohort_paper_title <- cohort$Title[
+  match(clean_shortlist$cohort_eid, cohort$EID)
+]
+
+clean_shortlist$campus_paper_title <- campus_for_matching$Title[
+  match(clean_shortlist$campus_eid, campus_for_matching$EID)
+]
+
+print(table(factor(
+  clean_shortlist$researcher,
+  levels = unique(cohort_roster$researcher)
+)))
+
+head(
+  clean_shortlist[
+    clean_shortlist$researcher == "Vanessa Kitzie",
+    c(
+      "rank", "author_name", "shared_reference_count",
+      "cosine_similarity", "pairs_with_2plus_shared", "campus_paper_title"
+    )
+  ],
+  5
+)
+```
+
+### Review the References behind the Top Candidates
+
+Show the paper titles and shared references behind the top two results.
+
+```r
+review_candidates <- head(
+  clean_shortlist[clean_shortlist$researcher == "Vanessa Kitzie", ],
+  2
+)
+
+for (i in seq_len(nrow(review_candidates))) {
+  candidate <- review_candidates[i, ]
+
+  pair_keys <- shared_refs$ref_key[
+    shared_refs$cohort_eid == candidate$cohort_eid &
+      shared_refs$campus_eid == candidate$campus_eid
+  ]
+
+  source_refs <- cohort_refs_clean[
+    cohort_refs_clean$EID == candidate$cohort_eid,
+  ]
+
+  citations <- source_refs$reference[
+    match(pair_keys, source_refs$ref_key)
+  ]
+
+  cat(
+    "\nCandidate: ", candidate$author_name,
+    "\nCohort paper: ", candidate$cohort_paper_title,
+    "\nCampus paper: ", candidate$campus_paper_title,
+    "\nShared references:\n",
+    sep = ""
+  )
+  writeLines(paste0("  - ", citations))
+}
+```
+
+### Build a Reference Evidence Table for the Full Shortlist
+
+Create a table with one row per shared citation behind each candidate's best paper pair.
+
+```r
+shortlist_evidence <- merge(
+  clean_shortlist[c(
+    "researcher", "rank", "author_name", "author_id",
+    "cohort_eid", "campus_eid",
+    "cohort_paper_title", "campus_paper_title"
+  )],
+  shared_refs,
+  by = c("cohort_eid", "campus_eid")
+)
+
+# Look up the original citation text in the cohort export.
+citation_lookup <- cohort_refs_clean[c("EID", "ref_key", "reference")]
+citation_lookup <- citation_lookup[
+  !duplicated(citation_lookup[c("EID", "ref_key")]),
+]
+names(citation_lookup)[1] <- "cohort_eid"
+
+shortlist_evidence <- merge(
+  shortlist_evidence,
+  citation_lookup,
+  by = c("cohort_eid", "ref_key"),
+  all.x = TRUE
+)
+
+shortlist_evidence <- shortlist_evidence[
+  order(shortlist_evidence$researcher, shortlist_evidence$rank,
+        shortlist_evidence$reference),
+]
+
+stopifnot(
+  !anyNA(shortlist_evidence$reference),
+  nrow(shortlist_evidence) == sum(clean_shortlist$shared_reference_count)
+)
+
+View(shortlist_evidence[c(
+  "researcher", "rank", "author_name",
+  "cohort_paper_title", "campus_paper_title", "reference"
+)])
+```
+
+### Record Vanessa's Known Co-Authors and Refresh her Shortlist
+
+Results should show two candidates that Vanessa Kitzie has already collaborated with. Exclude them both.
+
+```r
+# 1. Record Vanessa's confirmed coauthors and all known Bowman IDs.
+author_names <- usc_author_papers$author_name
+author_names <- gsub("[\u00A0\u202F]", " ", author_names)
+author_names <- tolower(trimws(gsub("[[:space:]]+", " ", author_names)))
+
+yi_id <- unique(usc_author_papers$author_id[
+  which(author_names == "wan, yi")
+])
+
+bowman_ids <- unique(c(
+  "58162493500",
+  usc_author_papers$author_id[which(author_names %in% c(
+    "bowman, rhys dreeszen",
+    "bowman, jesselyn dreeszen",
+    "dreeszen bowman, rhys",
+    "dreeszen bowman, jesselyn"
+  ))]
+))
+
+stopifnot(length(yi_id) == 1L, !anyNA(c(yi_id, bowman_ids)))
+
+confirmed_coauthors <- data.frame(
+  researcher = "Vanessa Kitzie",
+  author_id = unique(c(yi_id, bowman_ids)),
+  stringsAsFactors = FALSE
+)
+
+observed_coauthors <- unique(rbind(
+  observed_coauthors,
+  confirmed_coauthors
+))
+
+print(confirmed_coauthors, row.names = FALSE)
+# 2. Join the corrected paper scores to eligible USC authors.
+eligible_usc_author_papers <- usc_author_papers[
+  !usc_author_papers$author_id %in% cohort_roster$author_id,
+]
+
+clean_evidence <- merge(
+  merge(cohort_author_papers, paper_pairs, by = "cohort_eid"),
+  eligible_usc_author_papers,
+  by = "campus_eid"
+)
+
+coauthor_keys <- with(
+  observed_coauthors,
+  paste(researcher, author_id, sep = "\t")
+)
+
+evidence_keys <- with(
+  clean_evidence,
+  paste(researcher, author_id, sep = "\t")
+)
+
+clean_evidence <- clean_evidence[!evidence_keys %in% coauthor_keys, ]
+qualifying_pairs <- clean_evidence[
+  clean_evidence$shared_reference_count >= 2,
+]
+
+# 3. Count qualifying paper pairs and select each candidate's best pair.
+pair_support <- aggregate(
+  campus_eid ~ researcher + author_id,
+  data = qualifying_pairs,
+  FUN = length
+)
+names(pair_support)[3] <- "pairs_with_2plus_shared"
+
+qualifying_pairs <- qualifying_pairs[
+  order(
+    -qualifying_pairs$cosine_similarity,
+    -qualifying_pairs$shared_reference_count,
+    qualifying_pairs$cohort_eid,
+    qualifying_pairs$campus_eid
+  ),
+]
+
+best_clean_pairs <- qualifying_pairs[
+  !duplicated(qualifying_pairs[c("researcher", "author_id")]),
+]
+
+clean_shortlist <- merge(
+  best_clean_pairs,
+  pair_support,
+  by = c("researcher", "author_id")
+)
+
+clean_shortlist <- clean_shortlist[
+  order(
+    clean_shortlist$researcher,
+    -clean_shortlist$cosine_similarity,
+    -clean_shortlist$shared_reference_count,
+    clean_shortlist$author_id
+  ),
+]
+
+clean_shortlist$rank <- as.integer(ave(
+  seq_len(nrow(clean_shortlist)),
+  clean_shortlist$researcher,
+  FUN = seq_along
+))
+
+clean_shortlist$cohort_paper_title <- cohort$Title[
+  match(clean_shortlist$cohort_eid, cohort$EID)
+]
+
+clean_shortlist$campus_paper_title <- campus_for_matching$Title[
+  match(clean_shortlist$campus_eid, campus_for_matching$EID)
+]
+
+# 4. Retrieve the citations behind each candidate's best paper pair.
+shortlist_evidence <- merge(
+  clean_shortlist[c(
+    "researcher", "rank", "author_name", "author_id",
+    "cohort_eid", "campus_eid",
+    "cohort_paper_title", "campus_paper_title"
+  )],
+  shared_refs,
+  by = c("cohort_eid", "campus_eid")
+)
+
+citation_lookup <- cohort_refs_clean[c("EID", "ref_key", "reference")]
+citation_lookup <- citation_lookup[
+  !duplicated(citation_lookup[c("EID", "ref_key")]),
+]
+names(citation_lookup)[1] <- "cohort_eid"
+
+shortlist_evidence <- merge(
+  shortlist_evidence,
+  citation_lookup,
+  by = c("cohort_eid", "ref_key"),
+  all.x = TRUE
+)
+
+shortlist_evidence <- shortlist_evidence[
+  order(
+    shortlist_evidence$researcher,
+    shortlist_evidence$rank,
+    shortlist_evidence$reference
+  ),
+]
+
+# 5. Check the results and preview Vanessa's updated shortlist.
+vanessa_shortlist <- clean_shortlist[
+  clean_shortlist$researcher == "Vanessa Kitzie",
+]
+
+stopifnot(
+  !any(vanessa_shortlist$author_id %in% confirmed_coauthors$author_id),
+  !any(clean_shortlist$author_id %in% cohort_roster$author_id),
+  !anyNA(shortlist_evidence$reference),
+  nrow(shortlist_evidence) == sum(clean_shortlist$shared_reference_count)
+)
+
+print(table(factor(
+  clean_shortlist$researcher,
+  levels = unique(cohort_roster$researcher)
+)))
+
+print(head(vanessa_shortlist[c(
+  "rank", "author_name", "author_id", "shared_reference_count",
+  "cosine_similarity", "pairs_with_2plus_shared", "campus_paper_title"
+)], 5))
+
+View(shortlist_evidence)
+```
+
+### Export the Shortlist for VOSViewer
+
+Make a network with one node per cohort member or shortlisted USC candidate. Each link will connect a cohort member to a candidate on their shortlist. The link weight will be the cosine similarity of their best qualifying paper pair.
+
+```r
+cohort_names <- unique(clean_shortlist$researcher)
+
+candidates <- clean_shortlist[
+  !duplicated(clean_shortlist$author_id),
+  c("author_id", "author_name")
+]
+
+map_file <- data.frame(
+  id = seq_len(length(cohort_names) + nrow(candidates)),
+  label = c(cohort_names, candidates$author_name)
+)
+
+network_file <- data.frame(
+  from = match(clean_shortlist$researcher, cohort_names),
+  to = length(cohort_names) +
+    match(clean_shortlist$author_id, candidates$author_id),
+  weight = clean_shortlist$cosine_similarity
+)
+
+stopifnot(
+  !anyNA(network_file),
+  all(network_file$weight > 0),
+  anyDuplicated(network_file[c("from", "to")]) == 0L
+)
+
+export_dir <- file.path(getwd(), "vosviewer_export")
+dir.create(export_dir, showWarnings = FALSE)
+
+write.table(
+  map_file,
+  file.path(export_dir, "collaborator_map.txt"),
+  sep = "\t", row.names = FALSE, quote = 2,
+  qmethod = "double", fileEncoding = "UTF-8"
+)
+
+write.table(
+  network_file,
+  file.path(export_dir, "collaborator_network.txt"),
+  sep = "\t", row.names = FALSE, col.names = FALSE,
+  quote = FALSE, fileEncoding = "UTF-8"
+)
+
+cat("Saved to", normalizePath(export_dir, winslash = "/"), "\n")
+print(c(nodes = nrow(map_file), links = nrow(network_file)))
+```
+
+### Create a Visualization in VOSViewer
+
+In VOSViewer, create a map based on network data. Upload `collaborator_network.txt` as the network file and `collaborator_map.txt` as the map file.
+
+### Make a Separate VOSViewer Map for Each Researcher
+
+Create a map for each target researcher so that they are in the center and their shortlisted candidates are spaced evenly around them. After creating a visualization for the first researcher, "Vanessa Kitzie," replace her name and repeat this step and the next step for each researcher.
+
+```r
+researcher_name <- "Vanessa Kitzie"
+
+shortlist <- clean_shortlist[
+  clean_shortlist$researcher == researcher_name,
+]
+shortlist <- shortlist[order(shortlist$rank), ]
+stopifnot(nrow(shortlist) > 0L)
+
+n_candidates <- nrow(shortlist)
+angles <- pi / 2 - 2 * pi * (seq_len(n_candidates) - 1) / n_candidates
+
+member_map <- data.frame(
+  id = seq_len(n_candidates + 1L),
+  label = c(researcher_name, shortlist$author_name),
+  x = c(0, cos(angles)),
+  y = c(0, sin(angles))
+)
+
+member_network <- data.frame(
+  from = rep(1L, n_candidates),
+  to = seq_len(n_candidates) + 1L,
+  weight = shortlist$cosine_similarity
+)
+
+export_dir <- file.path(getwd(), "vosviewer_export")
+dir.create(export_dir, showWarnings = FALSE)
+file_prefix <- gsub(" +", "_", tolower(researcher_name))
+
+write.table(
+  member_map,
+  file.path(export_dir, paste0(file_prefix, "_map.txt")),
+  sep = "\t", row.names = FALSE, quote = 2,
+  qmethod = "double", fileEncoding = "UTF-8"
+)
+
+write.table(
+  member_network,
+  file.path(export_dir, paste0(file_prefix, "_network.txt")),
+  sep = "\t", row.names = FALSE, col.names = FALSE,
+  quote = FALSE, fileEncoding = "UTF-8"
+)
+
+cat("Saved to", normalizePath(export_dir, winslash = "/"), "\n")
+cat("Candidate links:", n_candidates, "\n")
+```
+
+## Create a Visualization in VOSViewer
+
+In VOSViewer, create a map based on network data. Upload `vanessa_kitzie_network.txt` as the network file and `vanessa_kitzie_map.txt` as the map file.
