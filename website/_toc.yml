@@ -19,3 +19,5 @@ chapters:
       - file: analyze-data-citation-benchmarking
 
   - file: resources
+
+  - file: analyses
